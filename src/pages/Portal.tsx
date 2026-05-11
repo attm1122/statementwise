@@ -244,8 +244,13 @@ function CreatePortalModal({ open, onClose }: { open: boolean; onClose: () => vo
   const [emailNotifications, setEmailNotifications] = useState(false)
 
   const addEmail = useCallback(() => {
-    if (emailInput && emailInput.includes('@') && !emails.includes(emailInput)) {
+    // Basic email validation - prevents obvious injection
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailInput && emailRegex.test(emailInput) && emailInput.length <= 254 && !emails.includes(emailInput)) {
       setEmails((prev) => [...prev, emailInput])
+      setEmailInput('')
+    } else if (emailInput && !emailRegex.test(emailInput)) {
+      // Invalid email - could log this for security monitoring
       setEmailInput('')
     }
   }, [emailInput, emails])

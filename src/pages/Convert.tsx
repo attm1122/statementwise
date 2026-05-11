@@ -34,6 +34,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { toast } from 'sonner';
+import { validateFileUpload, sanitizeFileName, escapeHtml, SECURITY } from '@/lib/security';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -149,14 +150,44 @@ function UploadPhase({ onFileSelect }: { onFileSelect: () => void }) {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    setFile({ name: 'Chase_Bank_Statement_April2025.pdf', size: '2.4 MB', pages: 4 });
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) {
+      const validation = validateFileUpload(droppedFile, {
+        maxSizeMB: SECURITY.MAX_FILE_SIZE_MB,
+        allowedExtensions: SECURITY.ALLOWED_FILE_EXTENSIONS,
+      });
+      if (!validation.valid) {
+        toast.error(validation.error || 'Invalid file');
+        return;
+      }
+      setFile({
+        name: sanitizeFileName(droppedFile.name),
+        size: `${(droppedFile.size / (1024 * 1024)).toFixed(1)} MB`,
+        pages: 4,
+      });
+    }
   }, []);
 
   const handleBrowse = () => inputRef.current?.click();
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
-      setFile({ name: e.target.files[0].name, size: '2.4 MB', pages: 4 });
+      const selectedFile = e.target.files[0];
+      const validation = validateFileUpload(selectedFile, {
+        maxSizeMB: SECURITY.MAX_FILE_SIZE_MB,
+        allowedExtensions: SECURITY.ALLOWED_FILE_EXTENSIONS,
+      });
+      if (!validation.valid) {
+        toast.error(validation.error || 'Invalid file');
+        // Reset the input so the same file can be re-selected
+        e.target.value = '';
+        return;
+      }
+      setFile({
+        name: sanitizeFileName(selectedFile.name),
+        size: `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`,
+        pages: 4,
+      });
     }
   };
 

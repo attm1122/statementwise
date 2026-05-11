@@ -3,6 +3,45 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--
+      Content Security Policy (CSP)
+      - script-src 'self': Only load scripts from same origin
+      - style-src 'self' 'unsafe-inline': Allow inline styles (required for Tailwind CSS-in-JS and CSS custom properties)
+      - img-src 'self' data: blob:: Allow images from same origin, data URIs, and blob URLs
+      - font-src 'self' https://fonts.gstatic.com: Allow self-hosted and Google Fonts
+      - connect-src 'self': API calls restricted to same origin (expand when backend API is added)
+      - frame-ancestors 'none': Prevent clickjacking by disallowing iframe embedding
+      - base-uri 'self': Restrict base tag to same origin
+      - form-action 'self': Form submissions restricted to same origin
+      - No 'unsafe-eval': Prevents eval() and similar dynamic code execution
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self;"
+    />
+
+    <!-- Anti-Clickjacking: X-Frame-Options (complement to CSP frame-ancestors) -->
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+
+    <!-- MIME-Type Sniffing Protection -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+
+    <!-- Referrer Policy: Limit referrer information leakage -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <!-- Permissions Policy: Restrict browser features -->
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), payment=()" />
+
+    <!-- Cache Control for Sensitive Application -->
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, proxy-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <!-- DNS Prefetch and Preconnect for External Resources -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     <title>Statementwise.ai</title>
   </head>
   <body>
