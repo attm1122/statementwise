@@ -33,93 +33,92 @@ logger = logging.getLogger("statementwise")
 # ── Request ID Middleware ────────────────────────────────────────
 
 class RequestIDMiddleware:
-    """Add unique request ID to each request."""
+    """ASGI middleware: adds unique request ID to each request."""
 
-    async def __call__(self, request: Request, call_next):
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+
         request_id = str(uuid.uuid4())[:8]
+        request = Request(scope, receive)
         request.state.request_id = request_id
-        
+
         start_time = time.time()
-        
-        response = await call_next(request)
-        
-        duration = (time.time() - start_time) * 1000
-        response.headers["X-Request-ID"] = request_id
-        response.headers["X-Response-Time"] = f"{duration:.0f}ms"
-        
-        logger.info(
-            f"{request.method} {request.url.path} - {response.status_code} "
-            f"- {duration:.0f}ms - {request_id}"
-        )
-        
-        return response
+
+        async def wrapped_send(message):
+            if message["type"] == "http.response.start":
+                duration = (time.time() - start_time) * 1000
+                headers = message.get("headers", [])
+                headers.append([b"x-request-id", request_id.encode()])
+                headers.append([b"x-response-time", f"{duration:.0f}ms".encode()])
+                message["headers"] = headers
+                logger.info(
+                    f"{request.method} {request.url.path} - "
+                    f"{duration:.0f}ms - {request_id}"
+                )
+            await send(message)
+
+        await self.app(scope, receive, wrapped_send)
 
 
 # ── Rate Limit Middleware ────────────────────────────────────────
 
 class RateLimitMiddleware:
-    """Simple rate limiting middleware using Redis."""
+    """ASGI middleware: rate limiting via Redis."""
 
-    async def __call__(self, request: Request, call_next):
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+
+        request = Request(scope, receive)
         redis_client = getattr(request.app.state, "redis", None)
         if redis_client is None or request.url.path in (
-            "/health",
-            "/docs",
-            "/openapi.json",
-            "/favicon.ico",
+            "/health", "/docs", "/openapi.json", "/favicon.ico",
         ):
-            return await call_next(request)
+            return await self.app(scope, receive, send)
 
-        # Get user identifier
         user_id = "anonymous"
         try:
             if hasattr(request.state, "user") and request.state.user:
                 user_id = request.state.user.get("user_id", "anonymous")
-        except:
+        except Exception:
             pass
-
         if user_id == "anonymous":
             user_id = request.client.host if request.client else "unknown"
 
         key = f"rate_limit:{user_id}:{request.url.path}"
-        
-        current = await redis_client.incr(key)
-        if current == 1:
-            await redis_client.expire(key, settings.RATE_LIMIT_WINDOW_SECONDS)
-
-        limit = settings.RATE_LIMIT_FREE_RPM
         try:
-            if hasattr(request.state, "user") and request.state.user:
-                role = request.state.user.get("role", "free")
-                if role == "admin":
-                    limit = settings.RATE_LIMIT_ENTERPRISE_RPM
-                elif role == "pro":
-                    limit = settings.RATE_LIMIT_PRO_RPM
-                elif role == "basic":
-                    limit = settings.RATE_LIMIT_BASIC_RPM
-        except:
+            current = await redis_client.incr(key)
+            if current == 1:
+                await redis_client.expire(key, settings.RATE_LIMIT_WINDOW_SECONDS)
+            limit = settings.RATE_LIMIT_FREE_RPM
+            try:
+                if hasattr(request.state, "user") and request.state.user:
+                    role = request.state.user.get("role", "free")
+                    if role == "admin":
+                        limit = settings.RATE_LIMIT_ENTERPRISE_RPM
+                    elif role == "pro":
+                        limit = settings.RATE_LIMIT_PRO_RPM
+                    elif role == "basic":
+                        limit = settings.RATE_LIMIT_BASIC_RPM
+            except Exception:
+                pass
+            if current > limit:
+                body = json.dumps({"success": False, "error": {"code": "RATE_LIMIT_EXCEEDED", "message": f"Rate limit of {limit} requests per minute exceeded", "details": {"limit": limit, "window": settings.RATE_LIMIT_WINDOW_SECONDS}}}).encode()
+                await send({"type": "http.response.start", "status": 429,
+                    "headers": [[b"content-type", b"application/json"], [b"retry-after", str(settings.RATE_LIMIT_WINDOW_SECONDS).encode()]]})
+                await send({"type": "http.response.body", "body": body})
+                return
+        except Exception:
             pass
 
-        if current > limit:
-            return JSONResponse(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                content={
-                    "success": False,
-                    "error": {
-                        "code": "RATE_LIMIT_EXCEEDED",
-                        "message": f"Rate limit of {limit} requests per minute exceeded",
-                        "details": {
-                            "limit": limit,
-                            "window": settings.RATE_LIMIT_WINDOW_SECONDS,
-                        },
-                    },
-                },
-            )
-
-        response = await call_next(request)
-        response.headers["X-RateLimit-Limit"] = str(limit)
-        response.headers["X-RateLimit-Remaining"] = str(max(0, limit - current))
-        return response
+        await self.app(scope, receive, send)
 
 
 # ── Error Handlers ───────────────────────────────────────────────
