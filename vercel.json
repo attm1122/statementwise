@@ -1,11 +1,4 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "version": 2,
-  "name": "statementwise",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
   "rewrites": [
     {
       "source": "/(.*)",
@@ -35,10 +28,6 @@
         {
           "key": "Strict-Transport-Security",
           "value": "max-age=63072000; includeSubDomains; preload"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
         }
       ]
     },
@@ -52,7 +41,7 @@
       ]
     },
     {
-      "source": "/(.*\\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf))",
+      "source": "/(.*\\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
       "headers": [
         {
           "key": "Cache-Control",
