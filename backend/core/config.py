@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     ARGON2_MEMORY_COST: int = 65536
 
     # ── CORS ───────────────────────────────────────────────────────
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "https://statementwise.ai"]
+    CORS_ORIGINS: List[str] = ["http://localhost:3000", "https://statementwiseai.com", "https://www.statementwiseai.com"]
     CORS_ALLOW_CREDENTIALS: bool = True
     CORS_ALLOW_METHODS: List[str] = ["*"]
     CORS_ALLOW_HEADERS: List[str] = ["*"]
@@ -120,7 +120,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: Optional[str] = None
     SMTP_PASSWORD: Optional[str] = None
-    SMTP_FROM_EMAIL: str = "noreply@statementwise.ai"
+    SMTP_FROM_EMAIL: str = "noreply@statementwiseai.com"
     SMTP_TLS: bool = True
 
     # ── Logging ────────────────────────────────────────────────────
@@ -159,6 +159,21 @@ class Settings(BaseSettings):
         if "asyncpg" in url:
             url = url.replace("postgresql+asyncpg://", "postgresql://", 1)
         return url
+
+
+    def model_post_init(self, __context):
+        """Validate critical settings in production."""
+        if self.is_production:
+            if not self.MOONSHOT_API_KEY or not self.MOONSHOT_API_KEY.startswith("sk-"):
+                raise ValueError(
+                    "MOONSHOT_API_KEY is required in production. "
+                    "Set it via environment variable: export MOONSHOT_API_KEY=sk-..."
+                )
+            if self.SECRET_KEY == secrets.token_urlsafe(32):
+                raise ValueError(
+                    "SECRET_KEY must be explicitly set in production. "
+                    "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+                )
 
 
 @lru_cache()

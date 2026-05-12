@@ -49,7 +49,7 @@ docker-compose exec api alembic upgrade head
 docker-compose exec api python -c "
 import asyncio
 from scripts.create_admin import create_admin
-asyncio.run(create_admin('admin@statementwise.ai', 'SecurePassword123!', 'Admin User'))
+asyncio.run(create_admin('admin@statementwiseai.com', 'SecurePassword123!', 'Admin User'))
 "
 ```
 

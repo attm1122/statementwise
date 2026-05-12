@@ -219,7 +219,7 @@ def create_app() -> FastAPI:
     if settings.is_production:
         app.add_middleware(
             TrustedHostMiddleware,
-            allowed_hosts=["statementwise.ai", "*.statementwise.ai", "api.statementwise.ai"],
+            allowed_hosts=["statementwiseai.com", "*.statementwiseai.com", "api.statementwiseai.com"],
         )
 
     # CORS
