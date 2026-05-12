@@ -3,6 +3,7 @@ Statementwise.ai - FastAPI Application
 Main application factory with middleware, routers, and error handling.
 """
 
+import json
 import logging
 import time
 import uuid
