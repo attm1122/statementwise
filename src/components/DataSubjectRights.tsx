@@ -6,7 +6,7 @@
  * Accessible from /privacy route or user menu.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Eye,
@@ -33,7 +33,6 @@ import {
   Settings,
   LogIn,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { secureStorage } from '@/lib/security';
@@ -625,11 +624,11 @@ export default function DataSubjectRights() {
   const [requests, setRequests] = useState<StoredRequest[]>(loadRequests);
 
   // Refresh requests when DSR events fire
-  useState(() => {
+  useEffect(() => {
     const handler = () => setRequests(loadRequests());
     window.addEventListener('dsr:updated', handler);
     return () => window.removeEventListener('dsr:updated', handler);
-  });
+  }, []);
 
   const toggleExpand = (id: DsrType) => {
     setExpandedId((prev) => (prev === id ? null : id));
