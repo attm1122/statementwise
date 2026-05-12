@@ -1,8 +1,8 @@
 Contact: mailto:security@statementwise.ai
 Expires: 2027-05-11T00:00:00.000Z
-Encryption: https://statementwise.ai/pgp-key.txt
-Acknowledgments: https://statementwise.ai/security/acknowledgments
-Policy: https://statementwise.ai/SECURITY.md
-Hiring: https://statementwise.ai/careers
-Canonical: https://statementwise.ai/.well-known/security.txt
+Encryption: https://statementwiseai.com/pgp-key.txt
+Acknowledgments: https://statementwiseai.com/security/acknowledgments
+Policy: https://statementwiseai.com/SECURITY.md
+Hiring: https://statementwiseai.com/careers
+Canonical: https://statementwiseai.com/.well-known/security.txt
 Preferred-Languages: en

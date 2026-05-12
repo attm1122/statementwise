@@ -2,7 +2,7 @@
   "name": "statementwise",
   "private": true,
   "version": "1.0.0",
-  "homepage": "https://attm1122.github.io/statementwise",
+  "homepage": "https://statementwiseai.com",
   "type": "module",
   "scripts": {
     "dev": "vite",

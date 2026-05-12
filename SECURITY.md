@@ -145,7 +145,7 @@ We regularly audit dependencies for known vulnerabilities:
 For machine-readable security contact information, see:
 
 ```
-https://statementwise.ai/.well-known/security.txt
+https://statementwiseai.com/.well-known/security.txt
 ```
 
 Or in the repository: `public/.well-known/security.txt`

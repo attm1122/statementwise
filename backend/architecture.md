@@ -414,7 +414,7 @@ task_routes = {
 
 ### Base URL
 ```
-Production:  https://api.statementwise.ai/v1
+Production:  https://api.statementwiseai.com/v1
 Development: http://localhost:8000/v1
 ```
 

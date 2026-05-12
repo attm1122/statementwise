@@ -545,9 +545,9 @@ export default function Docs() {
                   className="font-mono-code text-sm px-3 py-2 rounded-md border border-[#162544] flex-1"
                   style={{ background: '#050B14' }}
                 >
-                  https://api.statementwise.ai/v1
+                  https://api.statementwiseai.com/v1
                 </code>
-                <CopyButton text="https://api.statementwise.ai/v1" />
+                <CopyButton text="https://api.statementwiseai.com/v1" />
               </div>
             </div>
 
@@ -641,7 +641,7 @@ export default function Docs() {
 
             <CodeBlock
               language="bash"
-              code={`curl https://api.statementwise.ai/v1/convert \\
+              code={`curl https://api.statementwiseai.com/v1/convert \\
   -H "Authorization: Bearer sw_your_api_key" \\
   -H "Content-Type: application/json"`}
             />
@@ -753,7 +753,7 @@ X-RateLimit-Reset: 1704153600`}
             </h4>
             <CodeBlock
               language="bash"
-              code={`curl -X POST https://api.statementwise.ai/v1/convert \\
+              code={`curl -X POST https://api.statementwiseai.com/v1/convert \\
   -H "Authorization: Bearer sw_your_api_key" \\
   -F "file=@/path/to/statement.pdf" \\
   -F "metadata={\\"client_id\\": \\"acme_123\\"}"`}
@@ -806,7 +806,7 @@ X-RateLimit-Reset: 1704153600`}
             </h4>
             <CodeBlock
               language="bash"
-              code={`curl https://api.statementwise.ai/v1/convert/conv_abc123 \\
+              code={`curl https://api.statementwiseai.com/v1/convert/conv_abc123 \\
   -H "Authorization: Bearer sw_your_api_key"`}
             />
 
@@ -855,7 +855,7 @@ X-RateLimit-Reset: 1704153600`}
             </h4>
             <CodeBlock
               language="bash"
-              code={`curl https://api.statementwise.ai/v1/convert/conv_abc123/results \\
+              code={`curl https://api.statementwiseai.com/v1/convert/conv_abc123/results \\
   -H "Authorization: Bearer sw_your_api_key"`}
             />
 
@@ -950,7 +950,7 @@ X-RateLimit-Reset: 1704153600`}
             </h4>
             <CodeBlock
               language="bash"
-              code={`curl -X POST https://api.statementwise.ai/v1/convert/conv_abc123/export \\
+              code={`curl -X POST https://api.statementwiseai.com/v1/convert/conv_abc123/export \\
   -H "Authorization: Bearer sw_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -1050,7 +1050,7 @@ X-RateLimit-Reset: 1704153600`}
                 </h4>
                 <CodeBlock
                   language="bash"
-                  code={`curl -X POST https://api.statementwise.ai/v1/portals \\
+                  code={`curl -X POST https://api.statementwiseai.com/v1/portals \\
   -H "Authorization: Bearer sw_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -1074,8 +1074,8 @@ X-RateLimit-Reset: 1704153600`}
   "id": "portal_abc123",
   "name": "Acme Corporation",
   "slug": "acme-corp",
-  "url": "https://statementwise.ai/p/acme-corp",
-  "upload_url": "https://statementwise.ai/p/acme-corp/upload",
+  "url": "https://statementwiseai.com/p/acme-corp",
+  "upload_url": "https://statementwiseai.com/p/acme-corp/upload",
   "settings": {
     "require_password": true,
     "allow_downloads": true,
@@ -1106,7 +1106,7 @@ X-RateLimit-Reset: 1704153600`}
       "id": "portal_abc123",
       "name": "Acme Corporation",
       "slug": "acme-corp",
-      "url": "https://statementwise.ai/p/acme-corp",
+      "url": "https://statementwiseai.com/p/acme-corp",
       "created_at": "2025-03-15T14:30:00Z"
     }
   ],
@@ -1150,7 +1150,7 @@ X-RateLimit-Reset: 1704153600`}
                 </h4>
                 <CodeBlock
                   language="bash"
-                  code={`curl -X POST https://api.statementwise.ai/v1/portals/portal_abc123/uploads \\
+                  code={`curl -X POST https://api.statementwiseai.com/v1/portals/portal_abc123/uploads \\
   -H "Authorization: Bearer sw_your_api_key" \\
   -F "file=@/path/to/statement.pdf"`}
                 />
@@ -1177,7 +1177,7 @@ X-RateLimit-Reset: 1704153600`}
             </h4>
             <CodeBlock
               language="bash"
-              code={`curl -X POST https://api.statementwise.ai/v1/webhooks \\
+              code={`curl -X POST https://api.statementwiseai.com/v1/webhooks \\
   -H "Authorization: Bearer sw_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{

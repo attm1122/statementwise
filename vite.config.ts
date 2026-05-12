@@ -5,7 +5,7 @@ import { inspectAttr } from 'plugin-inspect-react-code'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: '/statementwise/',
+  base: '/',
   plugins: [
     // Only include inspect plugin in development mode to prevent DOM attribute leakage in production
     ...(mode === 'development' ? [inspectAttr()] : []),

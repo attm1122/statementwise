@@ -37,7 +37,7 @@
 | **Registered Address** | [Address TBD] |
 | **Company Registration Number** | [Number TBD] |
 | **VAT Identification Number** | [VAT Number TBD] |
-| **Website** | https://statementwise.ai |
+| **Website** | https://statementwiseai.com |
 
 ### 1.2 Contact Details
 

@@ -2,7 +2,7 @@
 
 > The AI-native bank statement converter. 99%+ accuracy, never-expiring credits, multi-format export.
 
-**Live Demo**: [https://attm1122.github.io/statementwise](https://attm1122.github.io/statementwise)
+**Live Demo**: [https://statementwiseai.com](https://statementwiseai.com)
 
 ---
 

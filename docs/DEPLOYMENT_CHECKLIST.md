@@ -202,7 +202,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "img-src 'self' data: blob: https://cdn.statementwise.ai; "
             "font-src 'self' https://fonts.gstatic.com; "
-            "connect-src 'self' https://api.statementwise.ai wss://*.statementwise.ai; "
+            "connect-src 'self' https://api.statementwiseai.com wss://*.statementwise.ai; "
             "media-src 'self'; "
             "object-src 'none'; "
             "frame-ancestors 'none'; "
@@ -1145,7 +1145,7 @@ If any checks are marked as failed with risk acceptance:
 echo "=== Post-Deployment Verification ==="
 
 BASE_URL="https://app.statementwise.ai"
-API_URL="https://api.statementwise.ai"
+API_URL="https://api.statementwiseai.com"
 
 # Health check
 echo "[1/8] Health Check"

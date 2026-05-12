@@ -74,7 +74,7 @@ describe('Docs Page', () => {
   it('renders base URL section', () => {
     render(<Wrapper />)
     expect(screen.getByText('Base URL')).toBeInTheDocument()
-    expect(screen.getByText('https://api.statementwise.ai/v1')).toBeInTheDocument()
+    expect(screen.getByText('https://api.statementwiseai.com/v1')).toBeInTheDocument()
   })
 
   it('renders Quick Start section with 3 cards', () => {

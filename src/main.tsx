@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client'
-import { HashRouter } from 'react-router'
+import { BrowserRouter } from 'react-router'
 import './index.css'
 import App from './App.tsx'
 
@@ -33,7 +33,7 @@ if (!rootElement) {
 }
 
 createRoot(rootElement).render(
-  <HashRouter>
+  <BrowserRouter>
     <App />
-  </HashRouter>,
+  </BrowserRouter>,
 )

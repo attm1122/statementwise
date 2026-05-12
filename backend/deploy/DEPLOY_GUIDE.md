@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Docker Engine 24+ and Docker Compose
-- Domain name configured (e.g., `api.statementwise.ai`)
+- Domain name configured (e.g., `api.statementwiseai.com`)
 - SSL certificate (Let's Encrypt recommended)
 - Moonshot AI API key from https://platform.moonshot.ai
 
@@ -60,11 +60,11 @@ asyncio.run(create_admin('admin@statementwise.ai', 'SecurePassword123!', 'Admin 
 sudo apt install certbot
 
 # Obtain certificate
-sudo certbot certonly --standalone -d api.statementwise.ai
+sudo certbot certonly --standalone -d api.statementwiseai.com
 
 # Copy to nginx
-cp /etc/letsencrypt/live/api.statementwise.ai/fullchain.pem deploy/ssl/
-cp /etc/letsencrypt/live/api.statementwise.ai/privkey.pem deploy/ssl/
+cp /etc/letsencrypt/live/api.statementwiseai.com/fullchain.pem deploy/ssl/
+cp /etc/letsencrypt/live/api.statementwiseai.com/privkey.pem deploy/ssl/
 ```
 
 ### 6. Restart with SSL

@@ -3,7 +3,7 @@
  * Type-safe HTTP client for the Statementwise FastAPI backend
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.statementwise.ai/v1";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.statementwiseai.com/v1";
 
 // ── Types ─────────────────────────────────────────────────────────
 
