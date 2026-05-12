@@ -3,7 +3,6 @@
   "private": true,
   "version": "1.0.0",
   "homepage": "https://statementwiseai.com",
-  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -47,7 +46,7 @@
     "dompurify": "^3.2.5",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "date-fns": "^4.1.0",
+    "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.38.0",
     "gsap": "^3.15.0",
@@ -69,6 +68,9 @@
     "vaul": "^1.1.2",
     "zod": "^4.3.5"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",
@@ -78,7 +80,7 @@
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.0",
-    "@vitejs/plugin-react": "^5.1.1",
+    "@vitejs/plugin-react": "^5.2.1",
     "jsdom": "^24.0.0",
     "vitest": "^1.6.0",
     "autoprefixer": "^10.4.23",

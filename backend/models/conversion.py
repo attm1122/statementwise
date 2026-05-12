@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import Enum as PyEnum
 from typing import Any
 
-from sqlalchemy import BigInteger, String, Numeric, Text, ForeignKey, DateTime, JSON
+from sqlalchemy import BigInteger, Integer, String, Numeric, Text, ForeignKey, DateTime, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

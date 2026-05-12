@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Highlight, themes } from 'prism-react-renderer'
 import {
@@ -405,7 +405,7 @@ export default function Docs() {
       id: string
       title: string
       description?: string
-      children: React.ReactNode
+      children: ReactNode
     }) => (
       <section id={id} className="mb-16 scroll-mt-24">
         <motion.div
@@ -441,7 +441,7 @@ export default function Docs() {
       method: string
       path: string
       description: string
-      children: React.ReactNode
+      children: ReactNode
     }) => (
       <div id={id} className="mb-12 scroll-mt-24">
         <EndpointCard method={method} path={path} description={description} />

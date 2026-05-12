@@ -19,7 +19,7 @@ class BaseModel(Base):
 
     __abstract__ = True
 
-    id: Mapped[str] = mapped_column(
+    id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,

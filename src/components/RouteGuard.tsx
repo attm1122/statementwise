@@ -7,13 +7,14 @@
  * OWASP: A01:2021 — Broken Access Control
  */
 
+import { type ReactNode } from 'react'
 import { Navigate } from 'react-router'
 import { motion } from 'framer-motion'
 import { ShieldAlert, Loader2 } from 'lucide-react'
 import { useAuthGuard } from '@/hooks/useAuthGuard'
 
 interface RouteGuardProps {
-  children: React.ReactNode
+  children: ReactNode
   requiredRoles?: string[]
   redirectTo?: string
 }

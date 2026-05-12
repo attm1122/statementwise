@@ -60,11 +60,9 @@ class RequestIDMiddleware:
 class RateLimitMiddleware:
     """Simple rate limiting middleware using Redis."""
 
-    def __init__(self, redis_client: redis.Redis = None):
-        self.redis = redis_client
-
     async def __call__(self, request: Request, call_next):
-        if self.redis is None or request.url.path in (
+        redis_client = getattr(request.app.state, "redis", None)
+        if redis_client is None or request.url.path in (
             "/health",
             "/docs",
             "/openapi.json",
@@ -85,9 +83,9 @@ class RateLimitMiddleware:
 
         key = f"rate_limit:{user_id}:{request.url.path}"
         
-        current = await self.redis.incr(key)
+        current = await redis_client.incr(key)
         if current == 1:
-            await self.redis.expire(key, settings.RATE_LIMIT_WINDOW_SECONDS)
+            await redis_client.expire(key, settings.RATE_LIMIT_WINDOW_SECONDS)
 
         limit = settings.RATE_LIMIT_FREE_RPM
         try:
@@ -237,6 +235,9 @@ def create_app() -> FastAPI:
 
     # Request ID + Logging
     app.add_middleware(RequestIDMiddleware)
+
+    # Rate Limiting
+    app.add_middleware(RateLimitMiddleware)
 
     # Error handlers
     from fastapi.exceptions import RequestValidationError, HTTPException

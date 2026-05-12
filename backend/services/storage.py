@@ -3,6 +3,7 @@ File storage service using MinIO/S3-compatible API.
 Handles PDF uploads and export file storage.
 """
 
+import asyncio
 import io
 import logging
 from datetime import timedelta
@@ -37,7 +38,8 @@ class StorageService:
         """Upload a PDF file to S3. Returns the S3 key."""
         key = f"conversions/{conversion_id}/{filename}"
         try:
-            self.s3.put_object(
+            await asyncio.to_thread(
+                self.s3.put_object,
                 Bucket=self.pdf_bucket,
                 Key=key,
                 Body=content,
@@ -61,7 +63,8 @@ class StorageService:
         """Generate a presigned URL for temporary access."""
         bucket = bucket or self.pdf_bucket
         try:
-            url = self.s3.generate_presigned_url(
+            url = await asyncio.to_thread(
+                self.s3.generate_presigned_url,
                 "get_object",
                 Params={"Bucket": bucket, "Key": key},
                 ExpiresIn=expiry,
@@ -81,7 +84,8 @@ class StorageService:
         """Upload an export file to S3. Returns the S3 key."""
         key = f"exports/{conversion_id}/{filename}"
         try:
-            self.s3.put_object(
+            await asyncio.to_thread(
+                self.s3.put_object,
                 Bucket=self.export_bucket,
                 Key=key,
                 Body=content,
@@ -96,6 +100,6 @@ class StorageService:
         """Delete a file from S3."""
         bucket = bucket or self.pdf_bucket
         try:
-            self.s3.delete_object(Bucket=bucket, Key=key)
+            await asyncio.to_thread(self.s3.delete_object, Bucket=bucket, Key=key)
         except ClientError as e:
             logger.error(f"Failed to delete file: {e}")

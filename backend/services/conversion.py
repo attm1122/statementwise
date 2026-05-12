@@ -440,3 +440,4 @@ class ConversionService:
             description="Refund for failed conversion",
         )
         self.db.add(credit_tx)
+        await self.db.commit()

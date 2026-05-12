@@ -111,7 +111,7 @@ class Settings(BaseSettings):
     STRIPE_PRICE_ENTERPRISE_ID: Optional[str] = None
 
     # ── Webhooks ───────────────────────────────────────────────────
-    WEBHOOK_SECRET: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
+    WEBHOOK_SECRET: str = Field(default="")
     WEBHOOK_MAX_RETRIES: int = 5
     WEBHOOK_RETRY_DELAYS: List[int] = [1, 5, 15, 60, 300]
 
@@ -162,7 +162,15 @@ class Settings(BaseSettings):
 
 
     def model_post_init(self, __context):
-        """Validate critical settings in production."""
+        """Validate critical settings and apply development fallbacks."""
+        if not self.WEBHOOK_SECRET:
+            if self.is_development:
+                self.WEBHOOK_SECRET = secrets.token_urlsafe(32)
+            else:
+                raise ValueError(
+                    "WEBHOOK_SECRET must be set via environment variable. "
+                    "It cannot be auto-generated in non-development environments."
+                )
         if self.is_production:
             if not self.MOONSHOT_API_KEY or not self.MOONSHOT_API_KEY.startswith("sk-"):
                 raise ValueError(
