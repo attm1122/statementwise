@@ -21,49 +21,7 @@ export default function App() {
         <Route path="/docs" element={<Docs />} />
         <Route path="/privacy" element={<Privacy />} />
       </Routes>
-      {/* GDPR Consent Banner — shown on all routes when consent not given */}
       <GDPRConsent />
     </Layout>
-  )
-}
-" element={<Docs />} />
-
-          {/* Protected Routes — Require Authentication */}
-          <Route
-            path="/convert"
-            element={
-              <RouteGuard
-                requiredRoles={['individual', 'firm', 'client', 'admin']}
-                redirectTo="/"
-              >
-                <Convert />
-              </RouteGuard>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <RouteGuard
-                requiredRoles={['individual', 'firm', 'admin']}
-                redirectTo="/"
-              >
-                <Dashboard />
-              </RouteGuard>
-            }
-          />
-          <Route
-            path="/portal"
-            element={
-              <RouteGuard
-                requiredRoles={['firm', 'admin']}
-                redirectTo="/"
-              >
-                <Portal />
-              </RouteGuard>
-            }
-          />
-        </Routes>
-      </Layout>
-    </SecurityProvider>
   )
 }

@@ -471,7 +471,6 @@ function CreatePortalModal({ open, onClose }: { open: boolean; onClose: () => vo
                       {validationErrors.urlSlug}
                     </p>
                   )}
-                  </div>
                 </motion.div>
 
                 {/* Folder Name */}
