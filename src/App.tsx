@@ -1,5 +1,7 @@
 import { Routes, Route } from 'react-router'
 import Layout from './components/Layout'
+import RouteGuard from './components/RouteGuard'
+import SecurityProvider from './components/SecurityProvider'
 import Home from './pages/Home'
 import Convert from './pages/Convert'
 import Dashboard from './pages/Dashboard'
@@ -11,17 +13,52 @@ import GDPRConsent from './components/GDPRConsent'
 
 export default function App() {
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/convert" element={<Convert />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/portal" element={<Portal />} />
-        <Route path="/pricing" element={<PricingPage />} />
-        <Route path="/docs" element={<Docs />} />
-        <Route path="/privacy" element={<Privacy />} />
-      </Routes>
-      <GDPRConsent />
-    </Layout>
+    <SecurityProvider>
+      <Layout>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/privacy" element={<Privacy />} />
+
+          {/* Protected Routes — Require Authentication */}
+          <Route
+            path="/convert"
+            element={
+              <RouteGuard
+                requiredRoles={['individual', 'firm', 'client', 'admin']}
+                redirectTo="/"
+              >
+                <Convert />
+              </RouteGuard>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <RouteGuard
+                requiredRoles={['individual', 'firm', 'admin']}
+                redirectTo="/"
+              >
+                <Dashboard />
+              </RouteGuard>
+            }
+          />
+          <Route
+            path="/portal"
+            element={
+              <RouteGuard
+                requiredRoles={['firm', 'admin']}
+                redirectTo="/"
+              >
+                <Portal />
+              </RouteGuard>
+            }
+          />
+        </Routes>
+        <GDPRConsent />
+      </Layout>
+    </SecurityProvider>
   )
 }
