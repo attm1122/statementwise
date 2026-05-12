@@ -1,16 +1,11 @@
 import path from "path"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
-import { inspectAttr } from 'plugin-inspect-react-code'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
   base: '/',
-  plugins: [
-    // Only include inspect plugin in development mode to prevent DOM attribute leakage in production
-    ...(mode === 'development' ? [inspectAttr()] : []),
-    react(),
-  ],
+  plugins: [react()],
   server: {
     port: 3000,
     // Security: fs.deny prevents access to sensitive files during development

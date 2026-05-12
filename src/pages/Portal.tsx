@@ -451,7 +451,7 @@ function CreatePortalModal({ open, onClose }: { open: boolean; onClose: () => vo
                   <label className="block text-sm font-medium text-[#8BA3C7] mb-1.5">Portal URL</label>
                   <div className="flex">
                     <span className="flex-shrink-0 bg-[#162544] border border-[#162544] border-r-0 rounded-l-lg px-3 py-2.5 text-[11px] text-[#4A6180] flex items-center">
-                      statementwise.ai/p/
+                      statementwiseai.com/p/
                     </span>
                     <input
                       type="text"
