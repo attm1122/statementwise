@@ -7,7 +7,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 
@@ -35,6 +35,10 @@ class UploadResponse(BaseModel):
 
 
 class ConversionStatusResponse(BaseModel):
+    """Pydantic v2 protects the 'model_' namespace, so we use 'llm_model' as the field name
+    and alias it to 'model_used' in API responses for backward compatibility."""
+    model_config = ConfigDict(protected_namespaces=())
+
     id: str
     status: str
     filename: str
@@ -55,7 +59,6 @@ class ExportRequest(BaseModel):
 
 @router.post("/upload", response_model=dict, status_code=status.HTTP_202_ACCEPTED)
 async def upload_statement(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     portal_id: Optional[str] = None,
     current_user: dict = Depends(get_current_user),
