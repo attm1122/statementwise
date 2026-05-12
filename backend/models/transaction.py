@@ -33,7 +33,7 @@ class Transaction(BaseModel):
     running_balance: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
     confidence_score: Mapped[Decimal | None] = mapped_column(Numeric(3, 2), nullable=True)
     raw_text: Mapped[str | None] = mapped_column(Text, nullable=True)
-    metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    extra_metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Relationships
     conversion: Mapped["Conversion"] = relationship(
@@ -55,6 +55,6 @@ class Transaction(BaseModel):
             "running_balance": float(self.running_balance) if self.running_balance else None,
             "confidence_score": float(self.confidence_score) if self.confidence_score else None,
             "raw_text": self.raw_text,
-            "metadata": self.metadata,
+            "metadata": self.extra_metadata,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

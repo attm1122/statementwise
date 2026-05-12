@@ -78,7 +78,7 @@ class CreditTransaction(BaseModel):
     amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     stripe_payment_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    extra_metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Relationships
     user: Mapped["User"] = relationship("User", lazy="selectin")
@@ -95,6 +95,6 @@ class CreditTransaction(BaseModel):
             "amount": float(self.amount),
             "description": self.description,
             "stripe_payment_id": self.stripe_payment_id,
-            "metadata": self.metadata,
+            "metadata": self.extra_metadata,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-        }
+    
