@@ -1,4 +1,89 @@
-# Ignore backend — Vercel should only build the frontend
+# =============================================================================
+# VERCELIGNORE — EXHAUSTIVE: Block ALL Python/backend files from upload
+# =============================================================================
+# Vercel's Nixpacks scans ALL files (even ignored ones) for build detection.
+# This file ONLY controls which files are UPLOADED — it does NOT prevent
+# Nixpacks from detecting Python. The vercel.json "builds" array overrides
+# detection. Both are needed.
+# =============================================================================
+
+# ── Backend (entire directory) ───────────────────────────────────────────────
 backend/
+
+# ── All Python files ─────────────────────────────────────────────────────────
+*.py
+**/*.py
+*.pyc
+**/*.pyc
+*.pyo
+**/*.pyo
+*.pyd
+**/*.pyd
+*.pyi
+**/*.pyi
+__pycache__/
+**/__pycache__/
+
+# ── Python environment / packaging ───────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.virtualenv/
+*.egg-info/
+dist/
+build/
+
+# ── Python dependency manifests (ALL variants) ───────────────────────────────
+requirements.txt
+requirements*.txt
+requirements.lock
+pyproject.toml
+Pipfile
+Pipfile.lock
+poetry.lock
+setup.py
+setup.cfg
+.python-version
+runtime.txt
+.deps
+
+# ── Documentation ────────────────────────────────────────────────────────────
 docs/
+*.md
+README*
+SECURITY*
+LICENSE*
+CHANGELOG*
+
+# ── Git / CI ─────────────────────────────────────────────────────────────────
+.git/
 .github/
+.gitignore
+.gitattributes
+
+# ── Docker ───────────────────────────────────────────────────────────────────
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# ── Deployment configs for other platforms ───────────────────────────────────
+fly.toml
+render.yaml
+*.tf
+.terraform/
+
+# ── Misc ─────────────────────────────────────────────────────────────────────
+.env*
+!.env.example
+*.log
+*.local
+.eslint*
+info.md
+architecture.md
+cost_scaling.md
+moonshot_assessment.md
+prompts.md
+DEPLOY.md
+coverage/
+.nyc_output/
