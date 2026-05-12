@@ -22,6 +22,8 @@ import {
   TrendingUp,
   CheckCircle2,
   Clock,
+  Shield,
+  Lock,
 } from 'lucide-react'
 import {
   AreaChart,
@@ -35,6 +37,10 @@ import {
   Pie,
   Cell,
 } from 'recharts'
+
+import { useAuthGuard } from '@/hooks/useAuthGuard'
+import { useSecurity } from '@/components/SecurityProvider'
+import { auditLogger } from '@/lib/audit'
 
 /* ─── easing ─── */
 const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number]
@@ -232,6 +238,31 @@ export default function Dashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const navigate = useNavigate()
 
+  // Security: Auth guard with RBAC — only firm/admin/individual roles
+  const { isAuthenticated, isAuthorized, loading, user } = useAuthGuard({
+    requiredRoles: ['individual', 'firm', 'admin'],
+    redirectTo: '/',
+  })
+
+  // Security: Access security context
+  const { sessionExpiringSoon, resetSessionTimer } = useSecurity()
+
+  // Security: Log dashboard access
+  useEffect(() => {
+    if (isAuthenticated && isAuthorized) {
+      auditLogger.logSuccess('DATA_ACCESS', {
+        resource: 'dashboard',
+        action: 'view',
+        details: { role: user?.role },
+      })
+    }
+  }, [isAuthenticated, isAuthorized, user])
+
+  // Security: Reset session timer on activity
+  const handleActivity = useCallback(() => {
+    resetSessionTimer()
+  }, [resetSessionTimer])
+
   const handleResize = useCallback(() => {
     setSidebarCollapsed(window.innerWidth < 1024 && window.innerWidth >= 640)
   }, [])
@@ -241,6 +272,15 @@ export default function Dashboard() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [handleResize])
+
+  // Security: Track user activity for session timeout
+  useEffect(() => {
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll']
+    events.forEach((e) => window.addEventListener(e, handleActivity, { passive: true }))
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, handleActivity))
+    }
+  }, [handleActivity])
 
   const sidebarWidth = sidebarCollapsed ? 64 : 200
 
@@ -318,6 +358,27 @@ export default function Dashboard() {
         >
           <h1 className="font-display text-[28px] sm:text-[32px] font-medium text-[#E8EEF7] tracking-tight">Dashboard</h1>
           <div className="flex items-center gap-3">
+            {/* Security: Session expiry warning */}
+            {sessionExpiringSoon && (
+              <div
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#FFB020] border border-[rgba(255,176,32,0.3)]"
+                style={{ background: 'rgba(255,176,32,0.08)' }}
+                title="Session expiring soon"
+              >
+                <Clock size={14} className="animate-pulse" />
+                <span>Session expiring</span>
+              </div>
+            )}
+
+            {/* Security: Encryption status indicator */}
+            <div
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-[#00D68F]"
+              title="End-to-end encryption active"
+            >
+              <Lock size={14} />
+              <span className="hidden sm:inline">Encrypted</span>
+            </div>
+
             <select className="bg-[#162544] border border-[#162544] text-[#8BA3C7] text-sm rounded-lg px-3 py-2 outline-none focus:border-[#4B82FF] transition-colors cursor-pointer">
               <option>Last 30 Days</option>
               <option>Last 7 Days</option>

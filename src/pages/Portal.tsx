@@ -26,7 +26,13 @@ import {
   FileText,
   Bell,
   KeyRound,
+  Shield,
+  AlertTriangle,
 } from 'lucide-react'
+import { useAuthGuard } from '@/hooks/useAuthGuard'
+import { useSecurity } from '@/components/SecurityProvider'
+import { auditLogger } from '@/lib/audit'
+import { validatePortalSlug, validateCompanyName, encodeHtml } from '@/lib/validation'
 
 /* ─── easing ─── */
 const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number]
@@ -242,17 +248,83 @@ function CreatePortalModal({ open, onClose }: { open: boolean; onClose: () => vo
   const [requirePassword, setRequirePassword] = useState(true)
   const [allowDownloads, setAllowDownloads] = useState(true)
   const [emailNotifications, setEmailNotifications] = useState(false)
+  // Security: Validation errors
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+
+  // Security: Validate client name
+  const validateClientName = useCallback((name: string): boolean => {
+    const result = validateCompanyName(name)
+    if (!result.valid) {
+      setValidationErrors((prev) => ({ ...prev, clientName: result.error || 'Invalid name' }))
+      return false
+    }
+    setValidationErrors((prev) => {
+      const { clientName: _, ...rest } = prev
+      return rest
+    })
+    return true
+  }, [])
+
+  // Security: Validate URL slug
+  const validateSlug = useCallback((slug: string): boolean => {
+    const result = validatePortalSlug(slug)
+    if (!result.valid) {
+      setValidationErrors((prev) => ({ ...prev, urlSlug: result.error || 'Invalid slug' }))
+      return false
+    }
+    setValidationErrors((prev) => {
+      const { urlSlug: _, ...rest } = prev
+      return rest
+    })
+    return true
+  }, [])
+
+  // Security: Sanitized input handlers
+  const handleClientNameChange = (value: string) => {
+    // Remove control characters and limit length
+    const sanitized = value.replace(/[\x00-\x1f\x7f]/g, '').slice(0, 255)
+    setClientName(sanitized)
+    if (validationErrors.clientName) {
+      validateClientName(sanitized)
+    }
+  }
+
+  const handleSlugChange = (value: string) => {
+    // Only allow safe characters for URL slugs
+    const sanitized = value.toLowerCase().replace(/[^a-z0-9\-_]/g, '').slice(0, 64)
+    setUrlSlug(sanitized)
+    if (validationErrors.urlSlug) {
+      validateSlug(sanitized)
+    }
+  }
 
   const addEmail = useCallback(() => {
-    // Basic email validation - prevents obvious injection
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (emailInput && emailRegex.test(emailInput) && emailInput.length <= 254 && !emails.includes(emailInput)) {
-      setEmails((prev) => [...prev, emailInput])
+    // Security: Enhanced email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput)
+    if (!emailInput || !emailRegex) {
       setEmailInput('')
-    } else if (emailInput && !emailRegex.test(emailInput)) {
-      // Invalid email - could log this for security monitoring
-      setEmailInput('')
+      auditLogger.logFailure('LOGIN_FAILURE', {
+        resource: 'portal',
+        action: 'invalid_email_input',
+        details: { reason: 'format_validation_failed' },
+      })
+      return
     }
+    if (emailInput.length > 254) {
+      setValidationErrors((prev) => ({ ...prev, email: 'Email exceeds maximum length' }))
+      return
+    }
+    if (emails.includes(emailInput)) {
+      return
+    }
+    // Sanitize email
+    const sanitizedEmail = emailInput.trim().toLowerCase()
+    setEmails((prev) => [...prev, sanitizedEmail])
+    setEmailInput('')
+    setValidationErrors((prev) => {
+      const { email: _, ...rest } = prev
+      return rest
+    })
   }, [emailInput, emails])
 
   const removeEmail = useCallback((email: string) => {
@@ -268,6 +340,41 @@ function CreatePortalModal({ open, onClose }: { open: boolean; onClose: () => vo
     },
     [addEmail]
   )
+
+  // Security: Validate entire form before submission
+  const handleCreate = () => {
+    const nameValid = validateClientName(clientName)
+    const slugValid = validateSlug(urlSlug)
+
+    if (!nameValid || !slugValid) {
+      auditLogger.logFailure('PORTAL_CREATED', {
+        resource: 'portal',
+        action: 'validation_failed',
+        details: {
+          nameValid,
+          slugValid,
+          hasClientName: !!clientName,
+          hasSlug: !!urlSlug,
+        },
+      })
+      return
+    }
+
+    // Security: Log portal creation
+    auditLogger.logSuccess('PORTAL_CREATED', {
+      resource: 'portal',
+      action: 'create',
+      details: {
+        slug: encodeHtml(urlSlug),
+        hasPassword: requirePassword,
+        allowDownloads,
+        teamSize: emails.length,
+      },
+    })
+
+    // Close modal on success
+    onClose()
+  }
 
   return (
     <AnimatePresence>
@@ -320,9 +427,19 @@ function CreatePortalModal({ open, onClose }: { open: boolean; onClose: () => vo
                     type="text"
                     placeholder="e.g., Acme Corporation"
                     value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    className="w-full bg-[#050B14] border border-[#162544] rounded-lg px-4 py-2.5 text-sm text-[#E8EEF7] placeholder:text-[#4A6180] outline-none focus:border-[#4B82FF] focus:shadow-[0_0_0_3px_rgba(75,130,255,0.15)] transition-all"
+                    onChange={(e) => handleClientNameChange(e.target.value)}
+                    onBlur={() => clientName && validateClientName(clientName)}
+                    maxLength={255}
+                    className={`w-full bg-[#050B14] border rounded-lg px-4 py-2.5 text-sm text-[#E8EEF7] placeholder:text-[#4A6180] outline-none focus:border-[#4B82FF] focus:shadow-[0_0_0_3px_rgba(75,130,255,0.15)] transition-all ${
+                      validationErrors.clientName ? 'border-[#FF4D6A]' : 'border-[#162544]'
+                    }`}
                   />
+                  {validationErrors.clientName && (
+                    <p className="mt-1 text-xs text-[#FF4D6A] flex items-center gap-1">
+                      <AlertTriangle size={12} />
+                      {validationErrors.clientName}
+                    </p>
+                  )}
                 </motion.div>
 
                 {/* Portal URL */}
@@ -340,9 +457,20 @@ function CreatePortalModal({ open, onClose }: { open: boolean; onClose: () => vo
                       type="text"
                       placeholder="acme-corp"
                       value={urlSlug}
-                      onChange={(e) => setUrlSlug(e.target.value)}
-                      className="flex-1 bg-[#050B14] border border-[#162544] rounded-r-lg px-4 py-2.5 text-sm text-[#E8EEF7] placeholder:text-[#4A6180] outline-none focus:border-[#4B82FF] focus:shadow-[0_0_0_3px_rgba(75,130,255,0.15)] transition-all"
+                      onChange={(e) => handleSlugChange(e.target.value)}
+                      onBlur={() => urlSlug && validateSlug(urlSlug)}
+                      maxLength={64}
+                      className={`flex-1 bg-[#050B14] border rounded-r-lg px-4 py-2.5 text-sm text-[#E8EEF7] placeholder:text-[#4A6180] outline-none focus:border-[#4B82FF] focus:shadow-[0_0_0_3px_rgba(75,130,255,0.15)] transition-all ${
+                        validationErrors.urlSlug ? 'border-[#FF4D6A]' : 'border-[#162544]'
+                      }`}
                     />
+                  </div>
+                  {validationErrors.urlSlug && (
+                    <p className="mt-1 text-xs text-[#FF4D6A] flex items-center gap-1">
+                      <AlertTriangle size={12} />
+                      {validationErrors.urlSlug}
+                    </p>
+                  )}
                   </div>
                 </motion.div>
 
@@ -473,8 +601,9 @@ function CreatePortalModal({ open, onClose }: { open: boolean; onClose: () => vo
                     Cancel
                   </button>
                   <button
-                    onClick={onClose}
-                    className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white transition-all duration-200 hover:brightness-115 hover:scale-[1.02] active:scale-[0.98]"
+                    onClick={handleCreate}
+                    disabled={!clientName || !urlSlug || Object.keys(validationErrors).length > 0}
+                    className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white transition-all duration-200 hover:brightness-115 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ background: 'linear-gradient(135deg, #4B82FF 0%, #1E6BFF 100%)' }}
                   >
                     Create Portal
@@ -627,6 +756,39 @@ export default function Portal() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+
+  // Security: RBAC — only firm and admin roles allowed
+  const { isAuthenticated, isAuthorized, loading, user } = useAuthGuard({
+    requiredRoles: ['firm', 'admin'],
+    redirectTo: '/dashboard',
+  })
+
+  // Security: Access security context for logout
+  const { sessionExpiringSoon, resetSessionTimer } = useSecurity()
+
+  // Security: Log portal access
+  useEffect(() => {
+    if (isAuthenticated && isAuthorized) {
+      auditLogger.logSuccess('PORTAL_ACCESS', {
+        resource: 'portal',
+        action: 'view',
+        details: { role: user?.role },
+      })
+    }
+  }, [isAuthenticated, isAuthorized, user])
+
+  // Security: Track activity for session timeout
+  const handleActivity = useCallback(() => {
+    resetSessionTimer()
+  }, [resetSessionTimer])
+
+  useEffect(() => {
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll']
+    events.forEach((e) => window.addEventListener(e, handleActivity, { passive: true }))
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, handleActivity))
+    }
+  }, [handleActivity])
 
   const handleResize = useCallback(() => {
     setSidebarCollapsed(window.innerWidth < 1024 && window.innerWidth >= 640)

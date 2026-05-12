@@ -35,6 +35,9 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { validateFileUpload, sanitizeFileName, escapeHtml, SECURITY } from '@/lib/security';
+import { validateFileUpload as validateFileUploadEnhanced, uploadRateLimiter, exportRateLimiter } from '@/lib/validation';
+import { useSecurity } from '@/components/SecurityProvider';
+import { auditLogger, logUpload, logExport, logRateLimit } from '@/lib/audit';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -135,7 +138,19 @@ const pageTransition = {
 function UploadPhase({ onFileSelect }: { onFileSelect: () => void }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [file, setFile] = useState<{ name: string; size: string; pages: number } | null>(null);
+  const [fileHash, setFileHash] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Security: Check rate limiting
+  const checkRateLimit = (): boolean => {
+    const rateCheck = uploadRateLimiter.isAllowed('upload');
+    if (!rateCheck.allowed) {
+      logRateLimit('file-upload', { remaining: rateCheck.remaining });
+      toast.error(`Rate limit exceeded. Please wait ${Math.ceil(rateCheck.resetIn / 1000)} seconds.`);
+      return false;
+    }
+    return true;
+  };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -147,46 +162,83 @@ function UploadPhase({ onFileSelect }: { onFileSelect: () => void }) {
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
+
+    // Security: Rate limit check
+    if (!checkRateLimit()) return;
+
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile) {
-      const validation = validateFileUpload(droppedFile, {
+      // Security: Enhanced file validation with magic bytes and hash
+      const validation = await validateFileUploadEnhanced(droppedFile, {
         maxSizeMB: SECURITY.MAX_FILE_SIZE_MB,
         allowedExtensions: SECURITY.ALLOWED_FILE_EXTENSIONS,
+        checkMagicBytes: true,
       });
       if (!validation.valid) {
+        logUpload('failure', { reason: validation.error, filename: sanitizeFileName(droppedFile.name) });
         toast.error(validation.error || 'Invalid file');
         return;
       }
+
+      const safeName = sanitizeFileName(droppedFile.name);
       setFile({
-        name: sanitizeFileName(droppedFile.name),
+        name: safeName,
         size: `${(droppedFile.size / (1024 * 1024)).toFixed(1)} MB`,
         pages: 4,
+      });
+      setFileHash(validation.fileHash || null);
+
+      // Security: Audit log successful upload selection
+      logUpload('success', {
+        filename: safeName,
+        size: droppedFile.size,
+        hash: validation.fileHash,
+        mimeType: validation.mimeType,
       });
     }
   }, []);
 
   const handleBrowse = () => inputRef.current?.click();
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
-      const selectedFile = e.target.files[0];
-      const validation = validateFileUpload(selectedFile, {
-        maxSizeMB: SECURITY.MAX_FILE_SIZE_MB,
-        allowedExtensions: SECURITY.ALLOWED_FILE_EXTENSIONS,
-      });
-      if (!validation.valid) {
-        toast.error(validation.error || 'Invalid file');
-        // Reset the input so the same file can be re-selected
+      // Security: Rate limit check
+      if (!checkRateLimit()) {
         e.target.value = '';
         return;
       }
+
+      const selectedFile = e.target.files[0];
+      // Security: Enhanced file validation with magic bytes and hash
+      const validation = await validateFileUploadEnhanced(selectedFile, {
+        maxSizeMB: SECURITY.MAX_FILE_SIZE_MB,
+        allowedExtensions: SECURITY.ALLOWED_FILE_EXTENSIONS,
+        checkMagicBytes: true,
+      });
+      if (!validation.valid) {
+        logUpload('failure', { reason: validation.error, filename: sanitizeFileName(selectedFile.name) });
+        toast.error(validation.error || 'Invalid file');
+        e.target.value = '';
+        return;
+      }
+
+      const safeName = sanitizeFileName(selectedFile.name);
       setFile({
-        name: sanitizeFileName(selectedFile.name),
+        name: safeName,
         size: `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`,
         pages: 4,
+      });
+      setFileHash(validation.fileHash || null);
+
+      // Security: Audit log successful upload selection
+      logUpload('success', {
+        filename: safeName,
+        size: selectedFile.size,
+        hash: validation.fileHash,
+        mimeType: validation.mimeType,
       });
     }
   };
@@ -838,7 +890,16 @@ function ExportPhase({ onRestart }: { onRestart: () => void }) {
   const [selectedFormat, setSelectedFormat] = useState<string>('csv');
 
   const handleDownload = () => {
+    // Security: Check export rate limit
+    const rateCheck = exportRateLimiter.isAllowed('export_download');
+    if (!rateCheck.allowed) {
+      logRateLimit('export_download', { remaining: rateCheck.remaining });
+      toast.error(`Export rate limit exceeded. Try again in ${Math.ceil(rateCheck.resetIn / 1000)}s.`);
+      return;
+    }
+
     const fmt = EXPORT_FORMATS.find((f) => f.key === selectedFormat);
+    logExport('success', { format: selectedFormat });
     toast.success(`Downloaded as ${fmt?.label || 'CSV'}`, {
       description: `statementwise_export.${selectedFormat} — ${fmt?.size || ''}`,
     });

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, User, Shield, Lock, LogOut, ChevronDown, Cookie } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { openConsentBanner } from './GDPRConsent'
 
 const navLinks = [
   { label: 'Features', href: '/#features' },
@@ -13,7 +14,9 @@ const navLinks = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const location = useLocation()
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,12 +30,51 @@ export default function Navbar() {
     setMobileOpen(false)
   }, [location])
 
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   const isActive = (href: string) => {
     if (href.startsWith('/#')) {
       return location.pathname === '/' && location.hash === href.slice(1)
     }
     return location.pathname === href
   }
+
+  const userMenuItems = [
+    { label: 'Profile', href: '/dashboard', icon: <User size={16} /> },
+    { label: 'Privacy Settings', href: '/privacy', icon: <Shield size={16} /> },
+    { label: 'Security', href: '/privacy?section=security', icon: <Lock size={16} /> },
+    {
+      label: 'Cookie Preferences',
+      href: '#',
+      icon: <Cookie size={16} />,
+      onClick: (e: React.MouseEvent) => {
+        e.preventDefault()
+        openConsentBanner()
+        setUserMenuOpen(false)
+      },
+    },
+    {
+      label: 'Logout',
+      href: '#',
+      icon: <LogOut size={16} />,
+      onClick: (e: React.MouseEvent) => {
+        e.preventDefault()
+        // In production, this would call your auth logout
+        window.dispatchEvent(new CustomEvent('auth:logout'))
+        setUserMenuOpen(false)
+      },
+      danger: true,
+    },
+  ]
 
   return (
     <>
@@ -86,6 +128,84 @@ export default function Navbar() {
             >
               Sign In
             </Link>
+
+            {/* User Menu */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#162544] hover:border-[#1E3260] hover:bg-[#162544]/30 transition-all duration-200"
+                aria-expanded={userMenuOpen}
+                aria-haspopup="true"
+                aria-label="User menu"
+              >
+                <div className="w-7 h-7 rounded-full bg-[rgba(75,130,255,0.2)] flex items-center justify-center">
+                  <User size={14} className="text-[#4B82FF]" />
+                </div>
+                <ChevronDown
+                  size={14}
+                  className={`text-[#8BA3C7] transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              <AnimatePresence>
+                {userMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -5, scale: 0.98 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-[#0B1628] border border-[#162544] shadow-xl shadow-black/30 py-2 z-50"
+                    role="menu"
+                  >
+                    {/* Menu header */}
+                    <div className="px-3 py-2 border-b border-[#162544] mb-1">
+                      <p className="text-sm font-medium text-[#E8EEF7]">Account</p>
+                      <p className="text-[11px] text-[#4A6180]">user@statementwise.ai</p>
+                    </div>
+                    {userMenuItems.map((item, idx) => (
+                      <div key={item.label}>
+                        {idx === userMenuItems.length - 1 && (
+                          <div className="border-t border-[#162544] my-1" />
+                        )}
+                        {'onClick' in item && item.onClick ? (
+                          <button
+                            onClick={item.onClick}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 font-body text-sm transition-colors duration-150 ${
+                              item.danger
+                                ? 'text-[#FF4D6A] hover:bg-[rgba(255,77,106,0.08)]'
+                                : 'text-[#8BA3C7] hover:text-[#E8EEF7] hover:bg-[#162544]/40'
+                            }`}
+                            role="menuitem"
+                          >
+                            <span className={item.danger ? 'text-[#FF4D6A]' : 'text-[#4A6180]'}>
+                              {item.icon}
+                            </span>
+                            {item.label}
+                          </button>
+                        ) : (
+                          <Link
+                            to={item.href}
+                            onClick={() => setUserMenuOpen(false)}
+                            className={`flex items-center gap-3 px-3 py-2.5 font-body text-sm transition-colors duration-150 ${
+                              item.danger
+                                ? 'text-[#FF4D6A] hover:bg-[rgba(255,77,106,0.08)]'
+                                : 'text-[#8BA3C7] hover:text-[#E8EEF7] hover:bg-[#162544]/40'
+                            }`}
+                            role="menuitem"
+                          >
+                            <span className={item.danger ? 'text-[#FF4D6A]' : 'text-[#4A6180]'}>
+                              {item.icon}
+                            </span>
+                            {item.label}
+                          </Link>
+                        )}
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <Link
               to="/convert"
               className="font-body text-sm font-semibold text-white px-5 py-2 rounded-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
@@ -149,6 +269,33 @@ export default function Navbar() {
                     {link.label}
                   </Link>
                 ))}
+              </div>
+
+              {/* Mobile user menu links */}
+              <div className="mt-8 pt-6 border-t border-[#162544]">
+                <p className="text-xs font-medium text-[#4A6180] uppercase tracking-wider mb-4">
+                  Account
+                </p>
+                <div className="flex flex-col gap-4">
+                  <Link
+                    to="/privacy"
+                    className="font-body text-base font-medium text-[#8BA3C7] hover:text-[#E8EEF7] transition-colors flex items-center gap-3"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <Shield size={18} />
+                    Privacy Settings
+                  </Link>
+                  <button
+                    onClick={() => {
+                      openConsentBanner()
+                      setMobileOpen(false)
+                    }}
+                    className="font-body text-base font-medium text-[#8BA3C7] hover:text-[#E8EEF7] transition-colors flex items-center gap-3 text-left"
+                  >
+                    <Cookie size={18} />
+                    Cookie Preferences
+                  </button>
+                </div>
               </div>
 
               <div className="mt-auto flex flex-col gap-4">
