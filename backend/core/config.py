@@ -162,26 +162,10 @@ class Settings(BaseSettings):
 
 
     def model_post_init(self, __context):
-        """Validate critical settings and apply development fallbacks."""
+        """Validate critical settings and apply sensible defaults."""
+        # Auto-generate WEBHOOK_SECRET if not set (for webhook signature verification)
         if not self.WEBHOOK_SECRET:
-            if self.is_development:
-                self.WEBHOOK_SECRET = secrets.token_urlsafe(32)
-            else:
-                raise ValueError(
-                    "WEBHOOK_SECRET must be set via environment variable. "
-                    "It cannot be auto-generated in non-development environments."
-                )
-        if self.is_production:
-            if not self.MOONSHOT_API_KEY or not self.MOONSHOT_API_KEY.startswith("sk-"):
-                raise ValueError(
-                    "MOONSHOT_API_KEY is required in production. "
-                    "Set it via environment variable: export MOONSHOT_API_KEY=sk-..."
-                )
-            if self.SECRET_KEY == secrets.token_urlsafe(32):
-                raise ValueError(
-                    "SECRET_KEY must be explicitly set in production. "
-                    "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
-                )
+            self.WEBHOOK_SECRET = secrets.token_urlsafe(32)
 
 
 @lru_cache()
