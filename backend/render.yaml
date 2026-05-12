@@ -1,0 +1,59 @@
+services:
+  - type: web
+    name: statementwise-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ENV
+        value: production
+      - key: PORT
+        value: 8000
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MOONSHOT_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: statementwise-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: statementwise-redis
+          property: connectionString
+      - key: CORS_ORIGINS
+        value: '["https://statementwiseai.com", "https://www.statementwiseai.com"]'
+    healthCheckPath: /health
+    autoDeploy: true
+
+  - type: worker
+    name: statementwise-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: celery -A tasks worker -l info
+    envVars:
+      - key: ENV
+        value: production
+      - key: MOONSHOT_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: statementwise-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: statementwise-redis
+          property: connectionString
+    autoDeploy: true
+
+databases:
+  - name: statementwise-db
+    databaseName: statementwise
+    user: statementwise
+    plan: starter
+
+redis:
+  - name: statementwise-redis
+    plan: starter
+    ipAllowList: []
