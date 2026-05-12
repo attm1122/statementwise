@@ -156,7 +156,7 @@ function FieldSeparator({
   className,
   ...props
 }: React.ComponentProps<"div"> & {
-  children?: React.ReactNode
+  children?: ReactNode
 }) {
   return (
     <div

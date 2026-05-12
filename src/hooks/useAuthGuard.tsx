@@ -232,10 +232,10 @@ export function useAuthCheck(): {
  * Props for RouteGuard component.
  */
 interface RouteGuardProps {
-  children: React.ReactNode;
+  children: ReactNode;
   requiredRoles?: UserRole[];
   redirectTo?: string;
-  fallback?: React.ReactNode;
+  fallback?: ReactNode;
 }
 
 /**
@@ -247,7 +247,7 @@ export function RouteGuard({
   requiredRoles = [],
   redirectTo = '/',
   fallback,
-}: RouteGuardProps): React.ReactNode {
+}: RouteGuardProps): ReactNode {
   const { isAuthenticated, isAuthorized, loading } = useAuthGuard({
     requiredRoles,
     redirectTo,

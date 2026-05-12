@@ -18,7 +18,7 @@ import App from './App'
 delete (window as Record<string, unknown>).__REACT_DEVTOOLS_GLOBAL_HOOK__;
 
 // Security: Disable React DevTools in production
-if (process.env.NODE_ENV === 'production') {
+if (import.meta.env.MODE === 'production') {
   // @ts-expect-error DevTools config
   window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = undefined;
 }

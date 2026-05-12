@@ -77,7 +77,7 @@ const RIGHTS: Array<{
   subtitle: string;
   description: string;
   article: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   iconBg: string;
   iconColor: string;
   details: string[];
@@ -193,7 +193,7 @@ const RIGHTS: Array<{
 
 const STATUS_CONFIG: Record<
   DsrStatus,
-  { label: string; color: string; bgColor: string; icon: React.ReactNode }
+  { label: string; color: string; bgColor: string; icon: ReactNode }
 > = {
   idle: { label: 'Not Submitted', color: '#8BA3C7', bgColor: 'rgba(139,163,199,0.1)', icon: <Clock size={12} /> },
   submitted: { label: 'Submitted', color: '#4B82FF', bgColor: 'rgba(75,130,255,0.1)', icon: <Send size={12} /> },
@@ -319,7 +319,7 @@ function AccessDataPanel() {
   );
 }
 
-function DataCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function DataCard({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg bg-[#050B14]/60 border border-[#162544]">
       <div className="text-[#4B82FF]">{icon}</div>

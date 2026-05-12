@@ -178,7 +178,7 @@ function StatCard({ label, value, suffix, prefix, sparklineData, sparklineColor,
   changeText?: string
   changePositive?: boolean
   subtext?: string
-  icon?: React.ReactNode
+  icon?: ReactNode
   delay: number
 }) {
   return (

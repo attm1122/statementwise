@@ -33,7 +33,7 @@ export interface ConsentCategory {
   label: string;
   description: string;
   required: boolean;
-  icon: React.ReactNode;
+  icon: ReactNode;
   details: string[];
 }
 

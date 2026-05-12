@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import { HashRouter } from 'react-router'
 import Footer from './Footer'
 
-function Wrapper({ children }: { children: React.ReactNode }) {
+function Wrapper({ children }: { children: ReactNode }) {
   return <HashRouter>{children}</HashRouter>
 }
 

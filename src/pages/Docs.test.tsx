@@ -5,7 +5,7 @@ import { HashRouter } from 'react-router'
 import Docs from './Docs'
 
 vi.mock('prism-react-renderer', () => ({
-  Highlight: ({ children }: { children: (props: any) => React.ReactNode }) =>
+  Highlight: ({ children }: { children: (props: any) => ReactNode }) =>
     children({
       style: {},
       tokens: [

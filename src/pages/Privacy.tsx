@@ -700,7 +700,7 @@ function ConsentHistory() {
 // Main Page Component
 // ---------------------------------------------------------------------------
 
-const SECTIONS: Array<{ id: SectionId; label: string; icon: React.ReactNode }> = [
+const SECTIONS: Array<{ id: SectionId; label: string; icon: ReactNode }> = [
   { id: 'controls', label: 'Privacy Controls', icon: <Shield size={18} /> },
   { id: 'data', label: 'Data Management', icon: <HardDrive size={18} /> },
   { id: 'security', label: 'Security', icon: <Lock size={18} /> },

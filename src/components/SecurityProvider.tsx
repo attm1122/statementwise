@@ -114,7 +114,7 @@ export function useSecurity(): SecurityContextValue {
 // ---------------------------------------------------------------------------
 
 interface SecurityProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
   config?: Partial<SecurityConfig>;
 }
 
@@ -587,7 +587,7 @@ export default function SecurityProvider({
 // ---------------------------------------------------------------------------
 
 interface CsrfProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 /**

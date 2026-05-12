@@ -153,7 +153,7 @@ const DEFAULT_CONFIG: AuditConfig = {
   batchSize: 10,
   flushIntervalMs: 30000, // 30 seconds
   maxQueueSize: 100,
-  includeDebugInfo: process.env.NODE_ENV === 'development',
+  includeDebugInfo: import.meta.env.DEV,
 };
 
 // ---------------------------------------------------------------------------
