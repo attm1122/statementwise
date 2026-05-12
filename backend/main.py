@@ -13,7 +13,6 @@ import redis.asyncio as redis
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 
 from core.config import get_settings
@@ -223,13 +222,6 @@ def create_app() -> FastAPI:
 
     # ── Middleware ──────────────────────────────────────────────
     
-    # Trusted hosts
-    if settings.is_production:
-        app.add_middleware(
-            TrustedHostMiddleware,
-            allowed_hosts=["statementwiseai.com", "*.statementwiseai.com", "api.statementwiseai.com"],
-        )
-
     # CORS
     app.add_middleware(
         CORSMiddleware,
@@ -268,19 +260,19 @@ def create_app() -> FastAPI:
     # ── Health Check ────────────────────────────────────────────
     
     @app.get("/health", tags=["Health"])
-    async def health_check():
+    async def health_check(request: Request):
         """Health check endpoint."""
         health = {
             "status": "healthy",
             "version": settings.APP_VERSION,
             "environment": settings.ENV,
-            "timestamp": time.time(),
         }
         
-        # Check Redis
+        # Check Redis via request.app (avoids closure variable issues)
         try:
-            if hasattr(app.state, "redis") and app.state.redis:
-                await app.state.redis.ping()
+            redis_client = getattr(request.app.state, "redis", None)
+            if redis_client:
+                await redis_client.ping()
                 health["redis"] = "connected"
             else:
                 health["redis"] = "not_configured"
