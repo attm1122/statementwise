@@ -1,0 +1,4 @@
+# Ignore backend — Vercel should only build the frontend
+backend/
+docs/
+.github/
