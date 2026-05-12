@@ -97,4 +97,5 @@ class CreditTransaction(BaseModel):
             "stripe_payment_id": self.stripe_payment_id,
             "metadata": self.extra_metadata,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            }
     
