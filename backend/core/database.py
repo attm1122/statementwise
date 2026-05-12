@@ -16,14 +16,27 @@ from core.config import get_settings
 
 settings = get_settings()
 
-# Create async engine
-engine = create_async_engine(
-    settings.async_database_url,
-    pool_size=settings.DATABASE_POOL_SIZE,
-    max_overflow=settings.DATABASE_MAX_OVERFLOW,
-    echo=settings.DATABASE_ECHO,
-    future=True,
-)
+# Create async engine (fallback to SQLite if DATABASE_URL is invalid/missing)
+import os
+database_url = settings.async_database_url
+if os.environ.get("DATABASE_URL") is None:
+    # No DATABASE_URL set — use SQLite for bootstrapping
+    database_url = "sqlite+aiosqlite:///./statementwise.db"
+
+try:
+    engine = create_async_engine(
+        database_url,
+        pool_size=settings.DATABASE_POOL_SIZE,
+        max_overflow=settings.DATABASE_MAX_OVERFLOW,
+        echo=settings.DATABASE_ECHO,
+        future=True,
+    )
+except Exception:
+    # Final fallback — SQLite in-memory (app starts, features degraded)
+    engine = create_async_engine(
+        "sqlite+aiosqlite:///:memory:",
+        future=True,
+    )
 
 # Create session factory
 AsyncSessionLocal = async_sessionmaker(

@@ -175,10 +175,14 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting Statementwise API...")
     
-    # Initialize database
-    await init_db()
+    # Initialize database (best effort - app starts even if DB is down)
+    try:
+        await init_db()
+        logger.info("Database initialized")
+    except Exception as e:
+        logger.warning(f"Database initialization skipped: {e}")
     
-    # Connect to Redis
+    # Connect to Redis (best effort - rate limiting disabled if Redis is down)
     try:
         app.state.redis = redis.from_url(str(settings.REDIS_URL))
         await app.state.redis.ping()
@@ -192,9 +196,15 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     logger.info("Shutting down...")
-    if app.state.redis:
-        await app.state.redis.close()
-    await close_db()
+    try:
+        if app.state.redis:
+            await app.state.redis.close()
+    except Exception:
+        pass
+    try:
+        await close_db()
+    except Exception:
+        pass
 
 
 # ── App Factory ──────────────────────────────────────────────────
