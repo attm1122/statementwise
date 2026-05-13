@@ -12,7 +12,7 @@
  * OWASP: A07:2021 — Identification and Authentication Failures
  */
 
-import React, {
+import {
   createContext,
   useContext,
   useState,
