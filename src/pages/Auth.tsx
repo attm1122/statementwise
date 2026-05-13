@@ -32,6 +32,7 @@ export default function Auth({ mode }: AuthPageProps) {
   const isSignup = mode === 'signup';
   const googleUrl = typeof window !== 'undefined' ? buildSupabaseOAuthUrl('google', next) : null;
   const appleUrl = typeof window !== 'undefined' ? buildSupabaseOAuthUrl('apple', next) : null;
+  const hasSocialAuth = Boolean(googleUrl || appleUrl);
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
@@ -107,26 +108,26 @@ export default function Auth({ mode }: AuthPageProps) {
                 {isSignup ? 'Start free. No credit card required.' : 'Sign in to continue to your workspace.'}
               </p>
 
-              <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                {googleUrl ? (
-                  <a className={socialButtonClass} href={googleUrl}>Continue with Google</a>
-                ) : (
-                  <button className={socialButtonClass} type="button" disabled>Google unavailable</button>
-                )}
-                {appleUrl ? (
-                  <a className={socialButtonClass} href={appleUrl}>Continue with Apple</a>
-                ) : (
-                  <button className={socialButtonClass} type="button" disabled>Apple unavailable</button>
-                )}
-              </div>
+              {hasSocialAuth && (
+                <>
+                  <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                    {googleUrl && (
+                      <a className={socialButtonClass} href={googleUrl}>Continue with Google</a>
+                    )}
+                    {appleUrl && (
+                      <a className={socialButtonClass} href={appleUrl}>Continue with Apple</a>
+                    )}
+                  </div>
 
-              <div className="my-6 flex items-center gap-3 text-xs text-[#4A6180]">
-                <span className="h-px flex-1 bg-[#162544]" />
-                Email
-                <span className="h-px flex-1 bg-[#162544]" />
-              </div>
+                  <div className="my-6 flex items-center gap-3 text-xs text-[#4A6180]">
+                    <span className="h-px flex-1 bg-[#162544]" />
+                    Email
+                    <span className="h-px flex-1 bg-[#162544]" />
+                  </div>
+                </>
+              )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className={`${hasSocialAuth ? '' : 'mt-8'} space-y-4`}>
                 {isSignup && (
                   <>
                     <label className="block">
