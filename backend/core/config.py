@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "Statementwise API"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
-    ENV: str = "production"  # development, staging, production
+    ENV: str = "development"  # development, staging, production
 
     # ── Server ─────────────────────────────────────────────────────
     HOST: str = "0.0.0.0"
@@ -134,7 +134,7 @@ class Settings(BaseSettings):
     ENABLE_OAUTH_GOOGLE: bool = False
     ENABLE_PORTALS: bool = True
     ENABLE_WEBHOOKS: bool = True
-    ENABLE_BILLING: bool = True
+    ENABLE_BILLING: bool = False
 
     @property
     def is_development(self) -> bool:

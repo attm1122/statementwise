@@ -5,7 +5,8 @@ Use this as the release gate before enabling paid signups.
 ## Hard Blocks
 
 - Vercel deploys the latest `main` commit successfully.
-- Backend is deployed with `ENV=production` and passes startup config validation.
+- Backend smoke tests can run with `ENV=staging`, but customer traffic requires
+  `ENV=production` and passing startup config validation.
 - `npm run build`, `npm run lint`, and `npm run go-live:check` pass.
 - `GO_LIVE_ENV_CHECK=1 npm run go-live:check` passes in the production secret environment.
 - A real upload, conversion, export, account login, and Stripe checkout flow have been tested end to end.
@@ -29,6 +30,10 @@ Set these in the backend host secret manager, not in source control:
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PRICE_BASIC_ID`
 - `STRIPE_PRICE_PRO_ID`
+
+Keep `ENABLE_BILLING=false` until Stripe Checkout sessions and verified Stripe
+webhooks grant credits/subscriptions end to end. Turning billing on makes the
+backend require Stripe production secrets at startup.
 
 Set these in Vercel:
 

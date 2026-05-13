@@ -21,9 +21,10 @@ railway add --database postgres
 # Add Redis
 railway add --database redis
 
-# Set environment variables
+# Set environment variables for a smoke-test deployment.
+# Use ENV=staging until all production secrets below are configured.
+railway variables set ENV="staging"
 railway variables set MOONSHOT_API_KEY="sk-kimi-..."
-railway variables set ENV="production"
 railway variables set WORKERS="2"
 
 # Deploy
@@ -102,17 +103,22 @@ curl http://localhost:8000/health
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `MOONSHOT_API_KEY` | **YES** | Your Moonshot API key |
-| `SECRET_KEY` | **YES** | JWT signing key (generate with `openssl rand -hex 32`) |
-| `DATABASE_URL` | **YES** | PostgreSQL connection string |
-| `REDIS_URL` | No | Redis for caching/rate limiting (falls back to memory) |
-| `ENV` | No | `production` (default) or `development` |
+| `MOONSHOT_API_KEY` | **YES for conversions** | Your Moonshot API key |
+| `SECRET_KEY` | **YES in production** | JWT signing key (generate with `openssl rand -hex 32`) |
+| `DATABASE_URL` | **YES in production** | PostgreSQL connection string |
+| `REDIS_URL` | **YES in production** | Redis for caching/rate limiting |
+| `ENV` | No | `development` (default), `staging`, or `production` |
 | `PORT` | No | Server port (default: 8000) |
 | `WORKERS` | No | Uvicorn workers (default: 4) |
-| `S3_ENDPOINT` | No | S3/MinIO endpoint for file storage |
-| `S3_ACCESS_KEY` | No | S3 access key |
-| `S3_SECRET_KEY` | No | S3 secret key |
-| `STRIPE_SECRET_KEY` | No | For billing (only when ready) |
+| `S3_ENDPOINT` | **YES in production** | S3/MinIO endpoint for file storage |
+| `S3_ACCESS_KEY` | **YES in production** | S3 access key |
+| `S3_SECRET_KEY` | **YES in production** | S3 secret key |
+| `ENABLE_BILLING` | No | Set `true` only after Stripe Checkout/webhooks are implemented |
+| `STRIPE_SECRET_KEY` | If billing enabled | Stripe secret key |
+
+`ENV=production` intentionally fails startup if required live services or secrets
+are missing. Use `ENV=staging` on Railway while wiring databases, storage, and
+payment infrastructure.
 
 ---
 
