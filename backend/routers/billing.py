@@ -112,48 +112,13 @@ async def purchase_credits(
     if not settings.STRIPE_SECRET_KEY:
         raise HTTPException(status_code=501, detail="Billing not configured")
 
-    # Find matching package
-    package = next(
-        (p for p in CREDIT_PACKAGES if p.credits == data.amount),
-        None,
+    # Do not credit accounts from this request alone. Production billing must
+    # create a Stripe Checkout session and grant credits only from a verified
+    # Stripe webhook after payment succeeds.
+    raise HTTPException(
+        status_code=501,
+        detail="Credit checkout is not enabled. Configure verified Stripe Checkout and webhooks before accepting payments.",
     )
-    if not package:
-        raise HTTPException(status_code=400, detail="Invalid credit amount")
-
-    # TODO: Integrate with Stripe
-    # For now, add credits directly (demo mode)
-    result = await db.execute(
-        select(Credit).where(Credit.user_id == current_user["user_id"])
-    )
-    credit = result.scalar_one_or_none()
-
-    if not credit:
-        credit = Credit(
-            user_id=current_user["user_id"],
-            balance=Decimal("0"),
-        )
-        db.add(credit)
-
-    credit.balance = Decimal(credit.balance) + Decimal(str(package.credits))
-    credit.lifetime_earned = Decimal(credit.lifetime_earned) + Decimal(str(package.credits))
-
-    # Record transaction
-    tx = CreditTransaction(
-        user_id=current_user["user_id"],
-        type=CreditTransactionType.PURCHASE,
-        amount=Decimal(str(package.credits)),
-        description=f"Purchased {package.credits} credits ({package.name})",
-    )
-    db.add(tx)
-    await db.commit()
-
-    return {
-        "success": True,
-        "data": {
-            "credits_added": package.credits,
-            "new_balance": float(credit.balance),
-        },
-    }
 
 
 @router.get("/transactions", response_model=dict)

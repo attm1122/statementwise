@@ -35,13 +35,13 @@
       - style-src 'self' 'unsafe-inline': Allow inline styles (required for Tailwind CSS-in-JS and CSS custom properties)
       - img-src 'self' data: blob:: Allow images from same origin, data URIs, and blob URLs
       - font-src 'self' https://fonts.gstatic.com: Allow self-hosted and Google Fonts
-      - connect-src 'self': API calls restricted to same origin (expand when backend API is added)
+      - connect-src includes the production API, Stripe, and optional Sentry intake
       - frame-ancestors 'none': Prevent clickjacking by disallowing iframe embedding
       - base-uri 'self': Restrict base tag to same origin
       - form-action 'self': Form submissions restricted to same origin
       - No 'unsafe-eval': Prevents eval() and similar dynamic code execution
     -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.statementwiseai.com https://*.sentry.io https://api.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; upgrade-insecure-requests;"
     />
 
     <!-- Anti-Clickjacking: X-Frame-Options (complement to CSP frame-ancestors) -->
@@ -54,7 +54,7 @@
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
     <!-- Permissions Policy: Restrict browser features -->
-    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), payment=()" />
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=()" />
 
     <!-- Cache Control for Sensitive Application -->
     <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, proxy-revalidate" />

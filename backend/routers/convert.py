@@ -3,6 +3,7 @@ Conversion router: upload, status, results, export.
 """
 
 import io
+from pathlib import PurePath
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
@@ -22,6 +23,7 @@ from services.storage import StorageService
 
 settings = get_settings()
 router = APIRouter()
+PDF_MAGIC_BYTES = b"%PDF"
 
 
 # ── Schemas ──────────────────────────────────────────────────────
@@ -65,6 +67,13 @@ async def upload_statement(
     db: AsyncSession = Depends(get_db),
 ):
     """Upload a bank statement PDF for processing."""
+    safe_filename = PurePath(file.filename or "statement.pdf").name
+    if not safe_filename.lower().endswith(".pdf"):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Only PDF files are accepted",
+        )
+
     # Validate file type
     if file.content_type != "application/pdf":
         raise HTTPException(
@@ -81,6 +90,12 @@ async def upload_statement(
             detail="Empty file",
         )
 
+    if not content.startswith(PDF_MAGIC_BYTES):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Uploaded file content is not a valid PDF",
+        )
+
     # Validate file size
     if len(content) > settings.MAX_FILE_SIZE_BYTES:
         raise HTTPException(
@@ -95,7 +110,7 @@ async def upload_statement(
         conversion = await service.process_conversion(
             user_id=current_user["user_id"],
             file_content=content,
-            filename=file.filename or "statement.pdf",
+            filename=safe_filename,
             portal_id=portal_id,
         )
     except ConversionError as e:

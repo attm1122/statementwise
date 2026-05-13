@@ -3,6 +3,7 @@ Database configuration and session management.
 Async SQLAlchemy with PostgreSQL.
 """
 
+import os
 from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import (
@@ -16,11 +17,11 @@ from core.config import get_settings
 
 settings = get_settings()
 
-# Create async engine (fallback to SQLite if DATABASE_URL is invalid/missing)
-import os
+# Create async engine. Development can bootstrap with SQLite, but production
+# must use an explicit DATABASE_URL validated by Settings.
 database_url = settings.async_database_url
-if os.environ.get("DATABASE_URL") is None:
-    # No DATABASE_URL set — use SQLite for bootstrapping
+if settings.is_development and os.environ.get("DATABASE_URL") is None:
+    # No DATABASE_URL set in development — use SQLite for bootstrapping.
     database_url = "sqlite+aiosqlite:///./statementwise.db"
 
 try:

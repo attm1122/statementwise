@@ -3,6 +3,7 @@ Statementwise.ai - Core Configuration
 Pydantic Settings with environment variable support
 """
 
+import os
 import secrets
 from functools import lru_cache
 from typing import List, Optional
@@ -163,9 +164,65 @@ class Settings(BaseSettings):
 
     def model_post_init(self, __context):
         """Validate critical settings and apply sensible defaults."""
-        # Auto-generate WEBHOOK_SECRET if not set (for webhook signature verification)
-        if not self.WEBHOOK_SECRET:
+        if self.is_production:
+            self.validate_production_config()
+
+        # Auto-generate WEBHOOK_SECRET only outside production. Production must
+        # provide a stable secret so webhook signatures survive restarts.
+        if not self.WEBHOOK_SECRET and not self.is_production:
             self.WEBHOOK_SECRET = secrets.token_urlsafe(32)
+
+    def validate_production_config(self) -> None:
+        """Fail closed when production is missing required live secrets."""
+        missing = []
+        insecure = []
+
+        required_env = [
+            "SECRET_KEY",
+            "DATABASE_URL",
+            "REDIS_URL",
+            "MOONSHOT_API_KEY",
+            "S3_ENDPOINT",
+            "S3_ACCESS_KEY",
+            "S3_SECRET_KEY",
+            "WEBHOOK_SECRET",
+        ]
+        if self.ENABLE_BILLING:
+            required_env.extend(
+                [
+                    "STRIPE_SECRET_KEY",
+                    "STRIPE_WEBHOOK_SECRET",
+                    "STRIPE_PRICE_BASIC_ID",
+                    "STRIPE_PRICE_PRO_ID",
+                ]
+            )
+
+        for name in required_env:
+            if not os.environ.get(name):
+                missing.append(name)
+
+        if len(self.SECRET_KEY) < 32:
+            insecure.append("SECRET_KEY must be at least 32 characters")
+        if str(self.DATABASE_URL).startswith("postgresql+asyncpg://postgres:postgres@localhost"):
+            insecure.append("DATABASE_URL still points at the local default database")
+        if str(self.REDIS_URL).startswith("redis://localhost"):
+            insecure.append("REDIS_URL still points at localhost")
+        if self.S3_ACCESS_KEY == "minioadmin" or self.S3_SECRET_KEY == "minioadmin":
+            insecure.append("S3 credentials still use MinIO defaults")
+        if self.S3_ENDPOINT.startswith("http://") and "localhost" not in self.S3_ENDPOINT:
+            insecure.append("S3_ENDPOINT must use HTTPS outside localhost")
+        if "*" in self.CORS_ORIGINS:
+            insecure.append("CORS_ORIGINS must not contain '*' in production")
+        if self.CORS_ALLOW_CREDENTIALS and "*" in self.CORS_ALLOW_HEADERS:
+            insecure.append("CORS_ALLOW_HEADERS must be explicit when credentials are enabled")
+
+        if missing or insecure:
+            details = []
+            if missing:
+                details.append(f"missing env vars: {', '.join(sorted(missing))}")
+            if insecure:
+                details.append("; ".join(insecure))
+            raise ValueError("Unsafe production configuration: " + " | ".join(details))
 
 
 @lru_cache()

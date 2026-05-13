@@ -44,6 +44,7 @@ class StorageService:
                 Key=key,
                 Body=content,
                 ContentType="application/pdf",
+                ServerSideEncryption="AES256",
                 Metadata={
                     "conversion-id": conversion_id,
                     "original-filename": filename,
@@ -90,6 +91,7 @@ class StorageService:
                 Key=key,
                 Body=content,
                 ContentType=content_type,
+                ServerSideEncryption="AES256",
             )
             return key
         except ClientError as e:
