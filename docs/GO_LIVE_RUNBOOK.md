@@ -38,9 +38,12 @@ backend require Stripe production secrets at startup.
 Set these in Vercel:
 
 - `VITE_APP_ENV=production`
-- `VITE_API_BASE_URL=https://api.statementwiseai.com/v1`
-- `VITE_API_URL=https://api.statementwiseai.com/v1`
+- `VITE_API_BASE_URL=https://statementwise-production.up.railway.app/v1`
+- `VITE_API_URL=https://statementwise-production.up.railway.app/v1`
 - Optional `VITE_SENTRY_DSN`
+
+Switch the Vercel API variables to `https://api.statementwiseai.com/v1` after
+that custom domain is attached to the Railway backend and DNS is verified.
 
 ## Smoke Test
 
