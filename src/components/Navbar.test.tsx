@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HashRouter, Routes, Route } from 'react-router'
 import Navbar from './Navbar'
+import SecurityProvider from './SecurityProvider'
 
 const navRoutes = [
   { path: '/', label: 'Features' },
@@ -15,7 +16,9 @@ function Wrapper({ initialRoute = '/' }: { initialRoute?: string }) {
   window.location.hash = initialRoute
   return (
     <HashRouter>
-      <Navbar />
+      <SecurityProvider>
+        <Navbar />
+      </SecurityProvider>
       <Routes>
         {navRoutes.map((r) => (
           <Route key={r.path} path={r.path} element={<div>{r.label} page</div>} />
@@ -44,11 +47,11 @@ describe('Navbar', () => {
     expect(screen.getByText('Sign In')).toBeInTheDocument()
   })
 
-  it('"Start Free" CTA button is visible and links to /convert', () => {
+  it('"Start Free" CTA button is visible and links to signup', () => {
     render(<Wrapper />)
     const startFreeBtn = screen.getByText('Start Free')
     expect(startFreeBtn).toBeInTheDocument()
-    expect(startFreeBtn.closest('a')).toHaveAttribute('href', '#/convert')
+    expect(startFreeBtn.closest('a')).toHaveAttribute('href', '#/signup?next=/convert')
   })
 
   it('toggles mobile menu on hamburger button click', async () => {
@@ -80,7 +83,7 @@ describe('Navbar', () => {
 
   it('nav links have correct hrefs', () => {
     render(<Wrapper />)
-    expect(screen.getByText('Features').closest('a')).toHaveAttribute('href', '/#features')
+    expect(screen.getByText('Features').closest('a')).toHaveAttribute('href', '#/#features')
     expect(screen.getByText('Pricing').closest('a')).toHaveAttribute('href', '#/pricing')
     expect(screen.getByText('Docs').closest('a')).toHaveAttribute('href', '#/docs')
     expect(screen.getByText('Dashboard').closest('a')).toHaveAttribute('href', '#/dashboard')

@@ -19,6 +19,7 @@ import {
   useCallback,
   useEffect,
   useRef,
+  type ReactNode,
 } from 'react';
 import {
   generateCsrfToken,
@@ -33,6 +34,7 @@ import {
 } from '@/lib/storage';
 import { auditLogger } from '@/lib/audit';
 import { generateSecureToken } from '@/lib/encryption';
+import { authApi, type RegisterInput } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -53,6 +55,7 @@ export interface SecurityContextValue {
   isAuthenticated: boolean;
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
+  register: (input: RegisterInput) => Promise<void>;
   logout: () => void;
   loading: boolean;
 
@@ -152,6 +155,23 @@ export default function SecurityProvider({
   const loginAttemptsRef = useRef(0);
   const lockoutUntilRef = useRef<number | null>(null);
 
+  const persistSession = useCallback(async (
+    token: string,
+    refreshToken: string,
+    nextUser: User
+  ) => {
+    await initializeSecureStorage(token);
+    await generateAndStoreSessionKey();
+
+    sessionStorage.setItem('sw_user', JSON.stringify(nextUser));
+    sessionStorage.setItem('sw_token', token);
+    sessionStorage.setItem('sw_refresh_token', refreshToken);
+
+    setUser(nextUser);
+    setIsAuthenticated(true);
+    window.dispatchEvent(new CustomEvent('auth:changed'));
+  }, []);
+
   // -----------------------------------------------------------------------
   // Login
   // -----------------------------------------------------------------------
@@ -194,54 +214,8 @@ export default function SecurityProvider({
 
         setLoading(true);
 
-        // Simulate authentication (replace with real auth API)
-        // In production, this calls your authentication endpoint
-        const mockAuthCall = async (): Promise<{
-          success: boolean;
-          token: string;
-          user: User;
-        }> => {
-          // Validate credentials format
-          if (!email || !password) {
-            throw new Error('Email and password are required');
-          }
-          if (password.length < 8) {
-            throw new Error('Invalid credentials');
-          }
-
-          // Simulate network delay
-          await new Promise((resolve) => setTimeout(resolve, 500));
-
-          // Mock successful login
-          // In production, this is a real API call
-          return {
-            success: true,
-            token: `sw_${generateSecureToken(24)}`,
-            user: {
-              id: `usr_${generateSecureToken(8)}`,
-              email: email.toLowerCase().trim(),
-              name: email.split('@')[0] || 'User',
-              role: 'firm' as UserRole, // Default role for demo
-            },
-          };
-        };
-
-        const response = await mockAuthCall();
-
-        // Initialize secure storage with session token
-        await initializeSecureStorage(response.token);
-
-        // Generate session encryption key
-        await generateAndStoreSessionKey();
-
-        // Store user data (encrypted)
-        // Note: In production, never store sensitive data unencrypted
-        sessionStorage.setItem('sw_user', JSON.stringify(response.user));
-        sessionStorage.setItem('sw_token', response.token);
-
-        // Set user state
-        setUser(response.user);
-        setIsAuthenticated(true);
+        const response = await authApi.login(email.toLowerCase().trim(), password);
+        await persistSession(response.accessToken, response.refreshToken, response.user);
 
         // Reset login attempts
         loginAttemptsRef.current = 0;
@@ -252,7 +226,7 @@ export default function SecurityProvider({
         setCsrfToken(newToken);
 
         // Log successful login
-        auditLogger.setUserContext(response.user.id, response.token);
+        auditLogger.setUserContext(response.user.id, response.accessToken);
         auditLogger.logSuccess('LOGIN_SUCCESS', {
           resource: 'auth',
           details: { role: response.user.role },
@@ -275,7 +249,41 @@ export default function SecurityProvider({
         setLoading(false);
       }
     },
-    [config.maxLoginAttempts, config.lockoutDurationMinutes]
+    [config.maxLoginAttempts, config.lockoutDurationMinutes, persistSession]
+  );
+
+  const register = useCallback(
+    async (input: RegisterInput): Promise<void> => {
+      try {
+        setLoading(true);
+        const response = await authApi.register({
+          ...input,
+          email: input.email.toLowerCase().trim(),
+        });
+
+        await persistSession(response.accessToken, response.refreshToken, response.user);
+
+        const newToken = regenerateCsrfToken();
+        setCsrfToken(newToken);
+        auditLogger.setUserContext(response.user.id, response.accessToken);
+        auditLogger.logSuccess('REGISTER_SUCCESS', {
+          resource: 'auth',
+          details: { role: response.user.role },
+        });
+        startSessionTimer();
+      } catch (error) {
+        auditLogger.logFailure('REGISTER_FAILURE', {
+          resource: 'auth',
+          details: {
+            reason: error instanceof Error ? error.message : 'unknown_error',
+          },
+        });
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [persistSession]
   );
 
   // -----------------------------------------------------------------------
@@ -283,11 +291,18 @@ export default function SecurityProvider({
   // -----------------------------------------------------------------------
 
   const logout = useCallback(() => {
+    const token = sessionStorage.getItem('sw_token');
+
     // Log the logout
     auditLogger.logSuccess('LOGOUT', { resource: 'auth' });
+    void authApi.logout(token);
 
     // Clear all secure storage
     clearAllSecureStorage();
+    sessionStorage.removeItem('sw_user');
+    sessionStorage.removeItem('sw_token');
+    sessionStorage.removeItem('sw_refresh_token');
+    sessionStorage.removeItem('sw_session_id');
 
     // Clear CSRF token
     clearCsrfToken();
@@ -309,6 +324,7 @@ export default function SecurityProvider({
 
     // Flush any remaining audit events
     auditLogger.flush();
+    window.dispatchEvent(new CustomEvent('auth:changed'));
   }, []);
 
   // -----------------------------------------------------------------------
@@ -439,6 +455,10 @@ export default function SecurityProvider({
           } catch {
             // Invalid stored data, clear it
             clearAllSecureStorage();
+            sessionStorage.removeItem('sw_user');
+            sessionStorage.removeItem('sw_token');
+            sessionStorage.removeItem('sw_refresh_token');
+            window.dispatchEvent(new CustomEvent('auth:changed'));
           }
         }
       } catch {
@@ -456,6 +476,17 @@ export default function SecurityProvider({
       auditLogger.destroy();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const handleLogout = () => logout();
+    window.addEventListener('auth:logout', handleLogout);
+    window.addEventListener('auth:expired', handleLogout);
+
+    return () => {
+      window.removeEventListener('auth:logout', handleLogout);
+      window.removeEventListener('auth:expired', handleLogout);
+    };
+  }, [logout]);
 
   // -----------------------------------------------------------------------
   // Concurrent Session Detection
@@ -505,6 +536,7 @@ export default function SecurityProvider({
     isAuthenticated,
     user,
     login,
+    register,
     logout,
     loading,
     csrfToken,

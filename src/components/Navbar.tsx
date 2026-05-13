@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router'
 import { Menu, X, User, Shield, Lock, LogOut, ChevronDown, Cookie } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { openConsentBanner } from './GDPRConsent'
+import { useSecurity } from './SecurityProvider'
 
 const navLinks = [
   { label: 'Features', href: '/#features' },
@@ -17,6 +18,7 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const location = useLocation()
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const { isAuthenticated, user, logout } = useSecurity()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -68,8 +70,7 @@ export default function Navbar() {
       icon: <LogOut size={16} />,
       onClick: (e: React.MouseEvent) => {
         e.preventDefault()
-        // In production, this would call your auth logout
-        window.dispatchEvent(new CustomEvent('auth:logout'))
+        logout()
         setUserMenuOpen(false)
       },
       danger: true,
@@ -122,14 +123,17 @@ export default function Navbar() {
 
           {/* Desktop Right Actions */}
           <div className="hidden md:flex items-center gap-4">
-            <Link
-              to="/signin"
-              className="font-body text-sm font-medium text-[#8BA3C7] hover:text-[#E8EEF7] transition-colors duration-200"
-            >
-              Sign In
-            </Link>
+            {!isAuthenticated && (
+              <Link
+                to="/signin"
+                className="font-body text-sm font-medium text-[#8BA3C7] hover:text-[#E8EEF7] transition-colors duration-200"
+              >
+                Sign In
+              </Link>
+            )}
 
             {/* User Menu */}
+            {isAuthenticated && (
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -159,8 +163,8 @@ export default function Navbar() {
                   >
                     {/* Menu header */}
                     <div className="px-3 py-2 border-b border-[#162544] mb-1">
-                      <p className="text-sm font-medium text-[#E8EEF7]">Account</p>
-                      <p className="text-[11px] text-[#4A6180]">user@statementwise.ai</p>
+                      <p className="text-sm font-medium text-[#E8EEF7]">{user?.name || 'Account'}</p>
+                      <p className="text-[11px] text-[#4A6180]">{user?.email}</p>
                     </div>
                     {userMenuItems.map((item, idx) => (
                       <div key={item.label}>
@@ -205,9 +209,10 @@ export default function Navbar() {
                 )}
               </AnimatePresence>
             </div>
+            )}
 
             <Link
-              to="/convert"
+              to={isAuthenticated ? '/convert' : '/signup?next=/convert'}
               className="font-body text-sm font-semibold text-white px-5 py-2 rounded-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               style={{ background: 'linear-gradient(135deg, #4B82FF 0%, #1E6BFF 100%)' }}
             >
@@ -299,14 +304,16 @@ export default function Navbar() {
               </div>
 
               <div className="mt-auto flex flex-col gap-4">
+                {!isAuthenticated && (
+                  <Link
+                    to="/signin"
+                    className="font-body text-base font-medium text-[#8BA3C7] hover:text-[#E8EEF7] transition-colors text-center py-3"
+                  >
+                    Sign In
+                  </Link>
+                )}
                 <Link
-                  to="/signin"
-                  className="font-body text-base font-medium text-[#8BA3C7] hover:text-[#E8EEF7] transition-colors text-center py-3"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/convert"
+                  to={isAuthenticated ? '/convert' : '/signup?next=/convert'}
                   className="font-body text-base font-semibold text-white px-5 py-3 rounded-full text-center transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                   style={{ background: 'linear-gradient(135deg, #4B82FF 0%, #1E6BFF 100%)' }}
                 >

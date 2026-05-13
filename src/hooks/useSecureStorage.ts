@@ -10,6 +10,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { secureLocalStorage, secureSessionStorage, sensitiveStorage } from '@/lib/storage';
 import type { StorageType } from '@/lib/storage';
+import { mapBackendUser } from '@/lib/api';
 
 type StorageInstance = typeof secureLocalStorage;
 
@@ -168,6 +169,84 @@ export function useSessionStorage<T>(key: string, defaultValue?: T) {
  * Hook to track authentication state from secure storage.
  */
 export function useAuthState() {
+  const readAuthState = useCallback(() => {
+    const token = sessionStorage.getItem('sw_token');
+    const rawUser = sessionStorage.getItem('sw_user');
+
+    if (!token || !rawUser) {
+      return { token: null, user: null };
+    }
+
+    try {
+      const parsedUser = JSON.parse(rawUser) as {
+        id: string;
+        email: string;
+        role: string;
+        name?: string;
+        full_name?: string;
+        company_name?: string;
+        avatar?: string;
+        avatar_url?: string;
+      };
+
+      return {
+        token,
+        user: mapBackendUser({
+          id: parsedUser.id,
+          email: parsedUser.email,
+          role: parsedUser.role,
+          name: parsedUser.name,
+          full_name: parsedUser.full_name,
+          company_name: parsedUser.company_name,
+          avatar_url: parsedUser.avatar || parsedUser.avatar_url,
+        }),
+      };
+    } catch {
+      sessionStorage.removeItem('sw_token');
+      sessionStorage.removeItem('sw_user');
+      return { token: null, user: null };
+    }
+  }, []);
+
+  const [state, setState] = useState<{
+    token: string | null;
+    user: {
+      id: string;
+      email: string;
+      role: string;
+      name: string;
+    } | null;
+  }>(() => readAuthState());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const syncAuthState = () => {
+      setState(readAuthState());
+      setLoading(false);
+    };
+
+    syncAuthState();
+    window.addEventListener('auth:changed', syncAuthState);
+    window.addEventListener('storage', syncAuthState);
+
+    return () => {
+      window.removeEventListener('auth:changed', syncAuthState);
+      window.removeEventListener('storage', syncAuthState);
+    };
+  }, [readAuthState]);
+
+  return {
+    isAuthenticated: !!state.token && !!state.user,
+    token: state.token,
+    user: state.user,
+    loading,
+  };
+}
+
+/**
+ * Legacy hook retained for old secure-storage tests.
+ */
+export function useLegacySecureAuthState() {
   const { value: token, loading } = useSecureStorage<string>('auth_token', {
     storageType: 'session',
     sensitive: true,

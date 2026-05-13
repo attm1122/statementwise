@@ -220,7 +220,7 @@ function HeroSection() {
           className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <Link
-            to="/convert"
+            to="/signup?next=/convert"
             className="btn-primary text-center"
           >
             Start Converting Free
@@ -728,7 +728,7 @@ function PricingPreview() {
 
               {/* CTA */}
               <Link
-                to="/convert"
+                to="/signup?next=/convert"
                 className={`block w-full text-center py-3 rounded-lg font-semibold text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${
                   tier.ctaStyle === 'primary'
                     ? 'text-white'
@@ -910,7 +910,7 @@ function FinalCTA() {
           className="mt-9 flex flex-col items-center gap-4"
         >
           <Link
-            to="/convert"
+            to="/signup?next=/convert"
             className="btn-primary text-base px-8 py-4 animate-pulse-glow rounded-lg"
           >
             Start Converting Free

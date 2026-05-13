@@ -759,7 +759,7 @@ export default function Portal() {
   // Security: RBAC — only firm and admin roles allowed
   const { isAuthenticated, isAuthorized, loading, user } = useAuthGuard({
     requiredRoles: ['firm', 'admin'],
-    redirectTo: '/dashboard',
+    redirectTo: '/signin?next=/portal',
   })
 
   // Security: Access security context for logout

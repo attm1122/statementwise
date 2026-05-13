@@ -11,6 +11,17 @@ import PricingPage from '../pages/PricingPage'
 import Docs from '../pages/Docs'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import SecurityProvider from '../components/SecurityProvider'
+
+function authenticate(role = 'firm') {
+  sessionStorage.setItem('sw_token', 'test-token')
+  sessionStorage.setItem('sw_user', JSON.stringify({
+    id: 'test-user',
+    email: 'test@example.com',
+    name: 'Test User',
+    role,
+  }))
+}
 
 function FullApp() {
   return (
@@ -30,12 +41,13 @@ describe('Integration: Full Navigation Flow', () => {
   it('renders Layout with Navbar and Footer on all pages', () => {
     window.location.hash = '/'
     render(<FullApp />)
-    expect(screen.getByText('Statementwise.ai')).toBeInTheDocument()
+    expect(screen.getAllByText('Statementwise.ai')[0]).toBeInTheDocument()
     expect(screen.getByText('Product')).toBeInTheDocument()
   })
 
   it('navigates through all routes: Home → Convert → Dashboard → Portal → Pricing → Docs', async () => {
     const user = userEvent.setup()
+    authenticate()
     window.location.hash = '/'
     const { unmount } = render(<FullApp />)
 
@@ -51,14 +63,16 @@ describe('Integration: Full Navigation Flow', () => {
     // Navigate to Dashboard
     window.location.hash = '/dashboard'
     unmount()
-    render(<FullApp />)
-    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    const dashboardRender = render(<FullApp />)
+    expect(dashboardRender.container.textContent).toContain('Dashboard')
+    dashboardRender.unmount()
 
     // Navigate to Portal
     window.location.hash = '/portal'
     unmount()
-    render(<FullApp />)
-    expect(screen.getByText('Client Portals')).toBeInTheDocument()
+    const portalRender = render(<FullApp />)
+    expect(portalRender.container.textContent).toContain('Client Portals')
+    portalRender.unmount()
 
     // Navigate to Pricing
     window.location.hash = '/pricing'
@@ -92,17 +106,20 @@ describe('Integration: Full Navigation Flow', () => {
     ]
 
     routeTests.forEach(({ path, content }) => {
+      authenticate()
       window.location.hash = path
       const { unmount, container } = render(
         <HashRouter>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/convert" element={<Convert />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/portal" element={<Portal />} />
-            <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/docs" element={<Docs />} />
-          </Routes>
+          <SecurityProvider>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/convert" element={<Convert />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/portal" element={<Portal />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/docs" element={<Docs />} />
+            </Routes>
+          </SecurityProvider>
         </HashRouter>
       )
       expect(container.textContent).toContain(content)
@@ -141,7 +158,9 @@ describe('Integration: Full Navigation Flow', () => {
     window.location.hash = '/'
     render(
       <HashRouter>
-        <Navbar />
+        <SecurityProvider>
+          <Navbar />
+        </SecurityProvider>
       </HashRouter>
     )
     // The Features link should be present on the home page route

@@ -241,7 +241,7 @@ export default function Dashboard() {
   // Security: Auth guard with RBAC — only firm/admin/individual roles
   const { isAuthenticated, isAuthorized, loading, user } = useAuthGuard({
     requiredRoles: ['individual', 'firm', 'admin'],
-    redirectTo: '/',
+    redirectTo: '/signin?next=/dashboard',
   })
 
   // Security: Access security context

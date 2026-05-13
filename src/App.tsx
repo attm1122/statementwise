@@ -9,6 +9,7 @@ import Portal from './pages/Portal'
 import PricingPage from './pages/PricingPage'
 import Docs from './pages/Docs'
 import Privacy from './pages/Privacy'
+import Auth from './pages/Auth'
 import GDPRConsent from './components/GDPRConsent'
 
 export default function App() {
@@ -21,6 +22,8 @@ export default function App() {
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/docs" element={<Docs />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/signin" element={<Auth mode="signin" />} />
+          <Route path="/signup" element={<Auth mode="signup" />} />
 
           {/* Protected Routes — Require Authentication */}
           <Route
@@ -28,7 +31,7 @@ export default function App() {
             element={
               <RouteGuard
                 requiredRoles={['individual', 'firm', 'client', 'admin']}
-                redirectTo="/"
+                redirectTo="/signin?next=/convert"
               >
                 <Convert />
               </RouteGuard>
@@ -39,7 +42,7 @@ export default function App() {
             element={
               <RouteGuard
                 requiredRoles={['individual', 'firm', 'admin']}
-                redirectTo="/"
+                redirectTo="/signin?next=/dashboard"
               >
                 <Dashboard />
               </RouteGuard>
@@ -50,7 +53,7 @@ export default function App() {
             element={
               <RouteGuard
                 requiredRoles={['firm', 'admin']}
-                redirectTo="/"
+                redirectTo="/signin?next=/portal"
               >
                 <Portal />
               </RouteGuard>
