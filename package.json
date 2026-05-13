@@ -2,6 +2,7 @@
   "name": "statementwise",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "homepage": "https://statementwiseai.com",
   "scripts": {
     "dev": "vite",

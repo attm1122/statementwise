@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Check,
@@ -543,8 +543,8 @@ export default function PricingPage() {
               </thead>
               <tbody>
                 {comparisonCategories.map((cat, ci) => (
-                  <>
-                    <tr key={`cat-${ci}`}>
+                  <Fragment key={cat.name}>
+                    <tr>
                       <td
                         colSpan={4}
                         className="px-6 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#E8EEF7]"
@@ -570,7 +570,7 @@ export default function PricingPage() {
                         </td>
                       </tr>
                     ))}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
