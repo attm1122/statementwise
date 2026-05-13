@@ -152,6 +152,8 @@ export function buildSupabaseOAuthUrl(
   provider: 'google' | 'apple',
   nextPath: string
 ): string | null {
+  if (import.meta.env.VITE_ENABLE_SOCIAL_AUTH !== 'true') return null;
+
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   if (!supabaseUrl) return null;
 
