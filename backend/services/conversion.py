@@ -3,6 +3,8 @@ Bank statement conversion pipeline.
 Handles PDF upload, text/image extraction, LLM processing, and validation.
 """
 
+from __future__ import annotations
+
 import hashlib
 import io
 import logging

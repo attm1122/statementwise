@@ -1,5 +1,7 @@
 """User model with roles and authentication."""
 
+from __future__ import annotations
+
 from datetime import datetime, timezone
 from enum import Enum as PyEnum
 

@@ -2,6 +2,8 @@
 API Keys router: manage API keys for programmatic access.
 """
 
+from __future__ import annotations
+
 import secrets
 from datetime import datetime, timezone, timedelta
 from typing import Optional

@@ -3,6 +3,8 @@ Moonshot AI API integration for bank statement extraction.
 Handles PDF processing, vision model calls, and structured extraction.
 """
 
+from __future__ import annotations
+
 import asyncio
 import base64
 import hashlib

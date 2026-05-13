@@ -1,5 +1,7 @@
 """Conversion job model for bank statement processing."""
 
+from __future__ import annotations
+
 from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum as PyEnum
@@ -72,6 +74,11 @@ class Conversion(BaseModel):
     credit_transaction: Mapped["CreditTransaction | None"] = relationship(
         "CreditTransaction",
         back_populates="conversion",
+        lazy="selectin",
+    )
+    portal: Mapped["Portal | None"] = relationship(
+        "Portal",
+        back_populates="conversions",
         lazy="selectin",
     )
 

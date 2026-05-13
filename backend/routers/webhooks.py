@@ -2,6 +2,8 @@
 Webhooks router: configure and deliver webhooks.
 """
 
+from __future__ import annotations
+
 import hashlib
 import hmac
 import json

@@ -27,7 +27,7 @@ class TestPasswordHashing:
         
         assert hash1 != password  # Hash should not equal password
         assert hash1 != hash2  # Each hash should be unique (salted)
-        assert hash1.startswith("$2b$")  # bcrypt format
+        assert hash1.startswith("$bcrypt-sha256$")  # bcrypt-SHA256 format
 
     def test_verify_password_correct(self):
         """Test verifying correct password."""

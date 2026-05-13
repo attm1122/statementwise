@@ -20,14 +20,14 @@ settings = get_settings()
 # ── Password Hashing ─────────────────────────────────────────────
 
 pwd_context = CryptContext(
-    schemes=["bcrypt"],
+    schemes=["bcrypt_sha256"],
     deprecated="auto",
-    bcrypt__rounds=settings.BCRYPT_ROUNDS,
+    bcrypt_sha256__rounds=settings.BCRYPT_ROUNDS,
 )
 
 
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt."""
+    """Hash a password with bcrypt-SHA256 to avoid bcrypt's 72-byte limit."""
     return pwd_context.hash(password)
 
 

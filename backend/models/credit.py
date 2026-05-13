@@ -1,5 +1,7 @@
 """Credit balance and transaction models."""
 
+from __future__ import annotations
+
 from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum as PyEnum
@@ -97,5 +99,4 @@ class CreditTransaction(BaseModel):
             "stripe_payment_id": self.stripe_payment_id,
             "metadata": self.extra_metadata,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            }
-    
+        }

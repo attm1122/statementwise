@@ -1,5 +1,7 @@
 """Portal and PortalMember models for client portals."""
 
+from __future__ import annotations
+
 from enum import Enum as PyEnum
 
 from sqlalchemy import String, Text, ForeignKey, UniqueConstraint, JSON

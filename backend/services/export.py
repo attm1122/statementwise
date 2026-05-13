@@ -3,6 +3,8 @@ Export service for generating various output formats from extracted transactions
 Supports CSV, Excel, QBO, OFX, JSON, MT940, and CAMT.053.
 """
 
+from __future__ import annotations
+
 import csv
 import io
 import json
