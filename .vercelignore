@@ -52,7 +52,9 @@ runtime.txt
 docs/
 *.md
 README*
-SECURITY*
+/SECURITY*
+!src/components/SecurityProvider.tsx
+!src/lib/security.ts
 LICENSE*
 CHANGELOG*
 
