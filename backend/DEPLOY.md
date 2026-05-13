@@ -26,6 +26,12 @@ railway add --database redis
 railway variables set ENV="staging"
 railway variables set MOONSHOT_API_KEY="sk-kimi-..."
 railway variables set WORKERS="2"
+railway variables set DATABASE_URL='${{Postgres.DATABASE_URL}}'
+railway variables set REDIS_URL='${{Redis.REDIS_URL}}'
+railway variables set SECRET_KEY="$(openssl rand -base64 48)"
+railway variables set WEBHOOK_SECRET="$(openssl rand -base64 48)"
+railway variables set CORS_ORIGINS='["https://statementwiseai.com","https://www.statementwiseai.com"]'
+railway variables set CORS_ALLOW_HEADERS='["Authorization","Content-Type","X-Requested-With","X-Request-ID","X-Webhook-Signature"]'
 
 # Deploy
 railway up
@@ -119,6 +125,9 @@ curl http://localhost:8000/health
 `ENV=production` intentionally fails startup if required live services or secrets
 are missing. Use `ENV=staging` on Railway while wiring databases, storage, and
 payment infrastructure.
+
+List-valued settings such as `CORS_ORIGINS` and `CORS_ALLOW_HEADERS` must be set
+as JSON arrays in Railway, not comma-separated strings.
 
 ---
 
