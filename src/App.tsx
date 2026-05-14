@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router'
+import { useEffect } from 'react'
+import { Routes, Route, useLocation } from 'react-router'
 import Layout from './components/Layout'
 import RouteGuard from './components/RouteGuard'
 import SecurityProvider from './components/SecurityProvider'
@@ -11,11 +12,38 @@ import Docs from './pages/Docs'
 import Privacy from './pages/Privacy'
 import Auth from './pages/Auth'
 import GDPRConsent from './components/GDPRConsent'
+import {
+  bindGoogleAdsConsentListener,
+  trackGoogleAdsConversion,
+  trackGoogleAdsPageView,
+} from './lib/googleAds'
+
+function GoogleAdsBridge() {
+  const location = useLocation()
+
+  useEffect(() => bindGoogleAdsConsentListener(), [])
+
+  useEffect(() => {
+    const path = `${location.pathname}${location.search}`
+    trackGoogleAdsPageView(path)
+
+    if (location.search.includes('checkout=success')) {
+      const key = `sw_ads_purchase_${location.pathname}${location.search}`
+      if (!sessionStorage.getItem(key)) {
+        trackGoogleAdsConversion('purchase')
+        sessionStorage.setItem(key, 'true')
+      }
+    }
+  }, [location.pathname, location.search])
+
+  return null
+}
 
 export default function App() {
   return (
     <SecurityProvider>
       <Layout>
+        <GoogleAdsBridge />
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />

@@ -33,6 +33,11 @@ interface AuthPayload {
   user: BackendUser;
 }
 
+interface CheckoutSessionPayload {
+  checkout_url: string;
+  session_id: string;
+}
+
 export interface AuthSession {
   accessToken: string;
   refreshToken: string;
@@ -103,6 +108,10 @@ async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> 
   return (body.data ?? body) as T;
 }
 
+export function getAuthToken(): string | null {
+  return sessionStorage.getItem('sw_token');
+}
+
 function normalizeAuthSession(payload: AuthPayload): AuthSession {
   return {
     accessToken: payload.access_token,
@@ -145,6 +154,25 @@ export const authApi = {
         Authorization: `Bearer ${token}`,
       },
     }).catch(() => undefined);
+  },
+};
+
+export const billingApi = {
+  async createCheckoutSession(
+    planId: 'pro' | 'business',
+    billingInterval: 'monthly' | 'annual',
+    token: string
+  ): Promise<CheckoutSessionPayload> {
+    return requestJson<CheckoutSessionPayload>('/billing/checkout-session', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        plan_id: planId,
+        billing_interval: billingInterval,
+      }),
+    });
   },
 };
 

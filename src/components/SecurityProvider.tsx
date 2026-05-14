@@ -35,6 +35,7 @@ import {
 import { auditLogger } from '@/lib/audit';
 import { generateSecureToken } from '@/lib/encryption';
 import { authApi, type RegisterInput } from '@/lib/api';
+import { trackGoogleAdsConversion } from '@/lib/googleAds';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -262,6 +263,7 @@ export default function SecurityProvider({
         });
 
         await persistSession(response.accessToken, response.refreshToken, response.user);
+        trackGoogleAdsConversion('signup');
 
         const newToken = regenerateCsrfToken();
         setCsrfToken(newToken);

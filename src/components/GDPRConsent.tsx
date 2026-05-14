@@ -98,14 +98,14 @@ const CATEGORIES: ConsentCategory[] = [
   {
     id: 'marketing',
     label: 'Marketing',
-    description: 'Used for future marketing features. Currently not active but you can set your preference.',
+    description: 'Optional advertising measurement and campaign conversion tracking.',
     required: false,
     icon: <Megaphone size={18} />,
     details: [
-      'Promotional emails (future)',
-      'Product updates (future)',
-      'Partner offers (future)',
-      'Currently not in use',
+      'Google Ads conversion measurement',
+      'Ad campaign performance reporting',
+      'No financial documents or extracted bank data',
+      'Disabled unless you opt in',
     ],
   },
 ];

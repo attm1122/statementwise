@@ -1,12 +1,11 @@
-"""
-Billing router: credits, subscriptions, invoices.
-"""
+"""Billing router: credits, subscriptions, invoices."""
 
+import asyncio
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
-from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+import stripe
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, func
@@ -28,6 +27,11 @@ class PurchaseCreditsRequest(BaseModel):
     payment_method: str = "stripe"
 
 
+class CheckoutSessionRequest(BaseModel):
+    plan_id: str = Field(..., pattern="^(pro|business)$")
+    billing_interval: str = Field(default="monthly", pattern="^(monthly|annual)$")
+
+
 class CreditPackage(BaseModel):
     id: str
     name: str
@@ -44,6 +48,95 @@ CREDIT_PACKAGES = [
     CreditPackage(id="business", name="Business", credits=500, price_usd=59.99, savings_percent=40),
     CreditPackage(id="enterprise", name="Enterprise", credits=2000, price_usd=199.99, savings_percent=50),
 ]
+
+PLAN_QUOTAS = {
+    "pro": 2000,
+    "business": 10000,
+}
+
+PLAN_NAMES = {
+    "pro": "Pro",
+    "business": "Business",
+}
+
+
+def _billing_enabled() -> bool:
+    return bool(settings.ENABLE_BILLING and settings.STRIPE_SECRET_KEY)
+
+
+def _get_price_id(plan_id: str, billing_interval: str) -> str | None:
+    if plan_id == "pro":
+        if billing_interval == "annual":
+            return settings.STRIPE_PRICE_PRO_ANNUAL_ID
+        return settings.STRIPE_PRICE_PRO_MONTHLY_ID or settings.STRIPE_PRICE_PRO_ID
+
+    if plan_id == "business":
+        if billing_interval == "annual":
+            return settings.STRIPE_PRICE_BUSINESS_ANNUAL_ID
+        return settings.STRIPE_PRICE_BUSINESS_MONTHLY_ID or settings.STRIPE_PRICE_ENTERPRISE_ID
+
+    return None
+
+
+async def _credit_for_plan(
+    db: AsyncSession,
+    user_id: str,
+    plan_id: str,
+    amount: Decimal,
+    event_key: str,
+    description: str,
+    metadata: dict,
+) -> None:
+    existing_result = await db.execute(
+        select(CreditTransaction).where(CreditTransaction.stripe_payment_id == event_key)
+    )
+    if existing_result.scalar_one_or_none():
+        return
+
+    result = await db.execute(select(Credit).where(Credit.user_id == user_id))
+    credit = result.scalar_one_or_none()
+    if not credit:
+        credit = Credit(user_id=user_id, balance=Decimal("0"), lifetime_earned=Decimal("0"))
+        db.add(credit)
+
+    credit.balance = Decimal(credit.balance or 0) + amount
+    credit.lifetime_earned = Decimal(credit.lifetime_earned or 0) + amount
+    credit.subscription_plan = plan_id
+    credit.monthly_quota = PLAN_QUOTAS.get(plan_id)
+    credit.resets_at = datetime.now(timezone.utc) + timedelta(days=30)
+
+    db.add(
+        CreditTransaction(
+            user_id=user_id,
+            type=CreditTransactionType.PURCHASE.value,
+            amount=amount,
+            description=description,
+            stripe_payment_id=event_key,
+            extra_metadata=metadata,
+        )
+    )
+
+
+async def _set_plan(db: AsyncSession, user_id: str, plan_id: str | None) -> None:
+    result = await db.execute(select(Credit).where(Credit.user_id == user_id))
+    credit = result.scalar_one_or_none()
+    if not credit:
+        credit = Credit(user_id=user_id, balance=Decimal("0"), lifetime_earned=Decimal("0"))
+        db.add(credit)
+
+    credit.subscription_plan = plan_id
+    credit.monthly_quota = PLAN_QUOTAS.get(plan_id) if plan_id else None
+
+
+async def _subscription_metadata(subscription_id: str | None) -> dict:
+    if not subscription_id:
+        return {}
+
+    def retrieve_subscription():
+        return stripe.Subscription.retrieve(subscription_id)
+
+    subscription = await asyncio.to_thread(retrieve_subscription)
+    return dict(getattr(subscription, "metadata", {}) or {})
 
 
 # ── Routes ───────────────────────────────────────────────────────
@@ -119,6 +212,114 @@ async def purchase_credits(
         status_code=501,
         detail="Credit checkout is not enabled. Configure verified Stripe Checkout and webhooks before accepting payments.",
     )
+
+
+@router.post("/checkout-session", response_model=dict)
+async def create_checkout_session(
+    data: CheckoutSessionRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Create a verified Stripe Checkout subscription session."""
+    if not _billing_enabled():
+        raise HTTPException(status_code=501, detail="Billing is not enabled")
+
+    price_id = _get_price_id(data.plan_id, data.billing_interval)
+    if not price_id:
+        raise HTTPException(
+            status_code=501,
+            detail=f"Stripe price is not configured for {data.plan_id} {data.billing_interval}",
+        )
+
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+    frontend_url = settings.FRONTEND_URL.rstrip("/")
+    metadata = {
+        "user_id": str(current_user["user_id"]),
+        "plan_id": data.plan_id,
+        "billing_interval": data.billing_interval,
+    }
+
+    def create_session():
+        return stripe.checkout.Session.create(
+            mode="subscription",
+            customer_email=current_user.get("email"),
+            client_reference_id=str(current_user["user_id"]),
+            line_items=[{"price": price_id, "quantity": 1}],
+            success_url=f"{frontend_url}/dashboard?checkout=success",
+            cancel_url=f"{frontend_url}/pricing?checkout=cancelled",
+            metadata=metadata,
+            subscription_data={"metadata": metadata},
+            allow_promotion_codes=True,
+        )
+
+    session = await asyncio.to_thread(create_session)
+    return {"success": True, "data": {"checkout_url": session.url, "session_id": session.id}}
+
+
+@router.post("/stripe/webhook", response_model=dict)
+async def stripe_webhook(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Handle Stripe webhooks and grant credits only after verified Stripe events."""
+    if not _billing_enabled() or not settings.STRIPE_WEBHOOK_SECRET:
+        raise HTTPException(status_code=501, detail="Stripe webhooks are not configured")
+
+    payload = await request.body()
+    signature = request.headers.get("stripe-signature")
+    if not signature:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing Stripe signature")
+
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+    try:
+        event = stripe.Webhook.construct_event(
+            payload=payload,
+            sig_header=signature,
+            secret=settings.STRIPE_WEBHOOK_SECRET,
+        )
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Stripe payload")
+    except stripe.SignatureVerificationError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Stripe signature")
+
+    event_type = event["type"]
+    obj = event["data"]["object"]
+
+    if event_type == "checkout.session.completed":
+        metadata = dict(obj.get("metadata") or {})
+        user_id = metadata.get("user_id")
+        plan_id = metadata.get("plan_id")
+        if user_id and plan_id in PLAN_QUOTAS:
+            await _set_plan(db, user_id, plan_id)
+
+    elif event_type == "invoice.paid":
+        subscription_id = obj.get("subscription")
+        metadata = await _subscription_metadata(subscription_id)
+        user_id = metadata.get("user_id")
+        plan_id = metadata.get("plan_id")
+        if user_id and plan_id in PLAN_QUOTAS:
+            amount = Decimal(str(PLAN_QUOTAS[plan_id]))
+            await _credit_for_plan(
+                db=db,
+                user_id=user_id,
+                plan_id=plan_id,
+                amount=amount,
+                event_key=f"stripe_invoice:{obj['id']}",
+                description=f"{PLAN_NAMES[plan_id]} monthly credit grant",
+                metadata={
+                    "stripe_event_id": event["id"],
+                    "stripe_invoice_id": obj["id"],
+                    "stripe_subscription_id": subscription_id,
+                    "plan_id": plan_id,
+                },
+            )
+
+    elif event_type == "customer.subscription.deleted":
+        metadata = dict(obj.get("metadata") or {})
+        user_id = metadata.get("user_id")
+        if user_id:
+            await _set_plan(db, user_id, None)
+
+    return {"received": True}
 
 
 @router.get("/transactions", response_model=dict)

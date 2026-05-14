@@ -123,7 +123,7 @@ Analytics cookies help us understand how visitors interact with our website and 
 - To measure the effectiveness of our content
 - To improve the overall user experience
 
-**Important:** We use **self-hosted, privacy-preserving analytics**. We do **not** use Google Analytics, Adobe Analytics, or any third-party analytics service that shares data with external parties. All analytics data is processed on our own infrastructure.
+**Important:** We use **self-hosted, privacy-preserving analytics** for product analytics. We may also use Google Ads conversion measurement only after you opt in to Marketing cookies; this is used to measure campaign performance, not to process uploaded statements or extracted bank data.
 
 ---
 
@@ -314,7 +314,7 @@ You can also use industry opt-out tools:
 
 ### 7.1 Our Policy on Third-Party Cookies
 
-**Statementwise does not use third-party cookies** for advertising, tracking, or analytics purposes. All cookies we set are first-party cookies served from our own domain (statementwise.ai).
+Statementwise does not use third-party analytics cookies by default. If you opt in to Marketing cookies, Google Ads may set or read third-party cookies or similar identifiers for conversion measurement on our website.
 
 ### 7.2 Payment Processing (Stripe)
 
@@ -326,7 +326,15 @@ Our payment processor, Stripe, may set cookies on the payment pages:
 
 Stripe's cookies are only set on payment pages and are not used for tracking or advertising.
 
-### 7.3 Authentication Providers
+### 7.3 Advertising Measurement (Google Ads)
+
+If you opt in to Marketing cookies, Google Ads may receive page and conversion events such as signup or checkout completion. We do not send uploaded documents, extracted statement data, bank account details, or payment card details to Google Ads.
+
+| Cookie Source | Purpose | Control |
+|--------------|---------|---------|
+| Google Ads / Google Tag | Consent-gated conversion measurement and campaign reporting | Disabled unless Marketing cookies are accepted; can be withdrawn via Cookie Settings |
+
+### 7.4 Authentication Providers
 
 If your organization uses Single Sign-On (SSO):
 

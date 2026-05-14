@@ -511,7 +511,7 @@ We use the following categories of cookies:
 | `_sw_analytics` | Anonymous usage analytics | 90 days | Statementwise (self-hosted) |
 | `_sw_feature_usage` | Feature interaction tracking (anonymized) | 90 days | Statementwise (self-hosted) |
 
-> **Note:** We use **self-hosted, privacy-preserving analytics** that do not share data with third parties. No Google Analytics or similar third-party tracking tools are used.
+> **Note:** We use **self-hosted, privacy-preserving analytics** for product analytics. Google Ads conversion measurement may run only after Marketing consent is granted, and we do not send uploaded documents, extracted bank data, or payment card data to Google Ads.
 
 ### 8.4 Cookie Consent Mechanism
 

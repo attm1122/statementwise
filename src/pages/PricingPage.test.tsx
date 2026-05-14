@@ -58,7 +58,7 @@ describe('PricingPage', () => {
     render(<PricingPage />)
     expect(screen.getByText('Get Started Free')).toBeInTheDocument()
     expect(screen.getByText('Start Pro Trial')).toBeInTheDocument()
-    expect(screen.getByText('Contact Sales')).toBeInTheDocument()
+    expect(screen.getByText('Start Business')).toBeInTheDocument()
   })
 
   it('toggles between monthly and annual billing', async () => {

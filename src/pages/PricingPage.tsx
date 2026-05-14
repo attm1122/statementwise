@@ -10,6 +10,8 @@ import {
   Scale,
   RefreshCw,
 } from 'lucide-react'
+import { billingApi, getAuthToken } from '@/lib/api'
+import { trackGoogleAdsConversion } from '@/lib/googleAds'
 
 /* ──────────────────────── animation variants ──────────────────────── */
 const fadeUp = {
@@ -132,7 +134,7 @@ const tiers: Tier[] = [
       { text: 'Custom integrations', included: true },
       { text: 'SOC 2 certified', included: true },
     ],
-    cta: 'Contact Sales',
+    cta: 'Start Business',
     ctaStyle: 'primary',
   },
 ]
@@ -280,8 +282,38 @@ function FaqItem({
 export default function PricingPage() {
   const [billing, setBilling] = useState<Billing>('monthly')
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   const toggleFaq = (i: number) => setOpenFaq((prev) => (prev === i ? null : i))
+
+  const handleTierCta = async (tier: Tier) => {
+    setCheckoutError(null)
+
+    if (tier.id === 'free') {
+      window.location.assign('/signup?next=/convert')
+      return
+    }
+
+    if (tier.id !== 'pro' && tier.id !== 'business') return
+
+    const token = getAuthToken()
+    if (!token) {
+      window.location.assign(`/signup?next=${encodeURIComponent('/pricing')}`)
+      return
+    }
+
+    try {
+      setCheckoutLoading(tier.id)
+      trackGoogleAdsConversion('begin_checkout')
+      const session = await billingApi.createCheckoutSession(tier.id, billing, token)
+      window.location.assign(session.checkout_url)
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : 'Unable to start checkout')
+    } finally {
+      setCheckoutLoading(null)
+    }
+  }
 
   return (
     <div className="min-h-[100dvh] bg-[#050B14]">
@@ -481,6 +513,8 @@ export default function PricingPage() {
 
                 {/* CTA */}
                 <button
+                  onClick={() => void handleTierCta(tier)}
+                  disabled={checkoutLoading === tier.id}
                   className={`mt-6 w-full py-3 rounded-lg text-sm font-semibold transition-all duration-200 hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] cursor-pointer ${
                     tier.ctaStyle === 'primary'
                       ? 'text-white'
@@ -492,11 +526,16 @@ export default function PricingPage() {
                       : { background: 'transparent' }
                   }
                 >
-                  {tier.cta}
+                  {checkoutLoading === tier.id ? 'Opening checkout...' : tier.cta}
                 </button>
               </motion.div>
             ))}
           </motion.div>
+          {checkoutError && (
+            <p className="mt-5 text-center text-sm text-[#FF8A8A]" role="alert">
+              {checkoutError}
+            </p>
+          )}
         </div>
       </section>
 

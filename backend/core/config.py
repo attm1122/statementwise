@@ -110,6 +110,11 @@ class Settings(BaseSettings):
     STRIPE_PRICE_BASIC_ID: Optional[str] = None
     STRIPE_PRICE_PRO_ID: Optional[str] = None
     STRIPE_PRICE_ENTERPRISE_ID: Optional[str] = None
+    STRIPE_PRICE_PRO_MONTHLY_ID: Optional[str] = None
+    STRIPE_PRICE_PRO_ANNUAL_ID: Optional[str] = None
+    STRIPE_PRICE_BUSINESS_MONTHLY_ID: Optional[str] = None
+    STRIPE_PRICE_BUSINESS_ANNUAL_ID: Optional[str] = None
+    FRONTEND_URL: str = "https://www.statementwiseai.com"
 
     # ── Webhooks ───────────────────────────────────────────────────
     WEBHOOK_SECRET: str = Field(default="")
@@ -192,8 +197,6 @@ class Settings(BaseSettings):
                 [
                     "STRIPE_SECRET_KEY",
                     "STRIPE_WEBHOOK_SECRET",
-                    "STRIPE_PRICE_BASIC_ID",
-                    "STRIPE_PRICE_PRO_ID",
                 ]
             )
 
@@ -215,6 +218,13 @@ class Settings(BaseSettings):
             insecure.append("CORS_ORIGINS must not contain '*' in production")
         if self.CORS_ALLOW_CREDENTIALS and "*" in self.CORS_ALLOW_HEADERS:
             insecure.append("CORS_ALLOW_HEADERS must be explicit when credentials are enabled")
+        if self.ENABLE_BILLING:
+            pro_price = self.STRIPE_PRICE_PRO_MONTHLY_ID or self.STRIPE_PRICE_PRO_ID
+            business_price = self.STRIPE_PRICE_BUSINESS_MONTHLY_ID or self.STRIPE_PRICE_ENTERPRISE_ID
+            if not pro_price:
+                insecure.append("Stripe Pro monthly price ID is required when billing is enabled")
+            if not business_price:
+                insecure.append("Stripe Business monthly price ID is required when billing is enabled")
 
         if missing or insecure:
             details = []
